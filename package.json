@@ -6,10 +6,16 @@
   "author": "numtel <ben@latenightsketches.com>",
   "license": "MIT",
   "private": false,
+  "bin": {
+    "circuitscan": "./cli.js"
+  },
   "scripts": {
     "test": "mocha"
   },
   "devDependencies": {
     "mocha": "^10.4.0"
+  },
+  "dependencies": {
+    "commander": "^12.0.0"
   }
 }
