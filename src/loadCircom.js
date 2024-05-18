@@ -7,7 +7,12 @@ export default function(file) {
   const circomkit = findClosestFile(dirname(file), 'circomkit.json');
   if(circomkit) {
     let extraLocations = [];
-    const config = JSON.parse(readFileSync(circomkit, {encoding:'utf-8'}));
+    let config;
+    try {
+      config = JSON.parse(readFileSync(circomkit, {encoding:'utf-8'}));
+    } catch(error) {
+      throw new Error('INVALID_JSON: ' + circomkit);
+    }
     if('include' in config && Array.isArray(config.include)) {
       extraLocations = [...extraLocations, ...config.include];
     }
