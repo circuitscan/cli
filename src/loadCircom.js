@@ -66,8 +66,9 @@ Consider creating a circomkit.json file to specify more search locations.
       } else throw error;
     }
   }
-  const imported = getImports(circomCode);
-  const mainComponent = parseMainComponent(circomCode);
+  const remainingCode = removeComments(circomCode);
+  const imported = getImports(remainingCode);
+  const mainComponent = parseMainComponent(remainingCode);
   out[tryFile] = {
     fileName,
     file: tryFile,
@@ -86,6 +87,13 @@ Consider creating a circomkit.json file to specify more search locations.
   if(!parentFile) return out;
   // Somewhere else
   return out[tryFile];
+}
+
+function removeComments(source) {
+  // Regular expression to match single-line and multi-line comments
+  const regex = /\/\/.*|\/\*[\s\S]*?\*\//g;
+  // Replace comments with an empty string
+  return source.replace(regex, '');
 }
 
 function getImports(circomCode) {
