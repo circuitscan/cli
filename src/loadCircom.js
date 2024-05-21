@@ -16,9 +16,14 @@ export default function(file) {
     if('include' in config && Array.isArray(config.include)) {
       extraLocations = [...extraLocations, ...config.include];
     }
-    return loadCircomSources(file, dirname(circomkit), extraLocations);
+    return {
+      circomkit: config,
+      files: loadCircomSources(file, dirname(circomkit), extraLocations),
+    };
   } else {
-    return loadCircomSources(file, dirname(file), []);
+    return {
+      files: loadCircomSources(file, dirname(file), []),
+    };
   }
 }
 
@@ -78,15 +83,46 @@ Consider creating a circomkit.json file to specify more search locations.
   const loadedImports = imported.map(importFile =>
     loadCircomSources(importFile, rootDir, extraLocations, tryFile, out));
   Object.assign(out[tryFile], {
-    imports: loadedImports.reduce((thisOut, importSource) => {
-      thisOut[importSource.fileName] = importSource.file;
+    imports: loadedImports.reduce((thisOut, importSource, index) => {
+      thisOut[imported[index]] = importSource.file;
       return thisOut;
     }, {}),
   });
   // Top level
-  if(!parentFile) return out;
+  if(!parentFile) return shortenFilenames(out);
   // Somewhere else
   return out[tryFile];
+}
+
+function shortenFilenames(out) {
+  const keys = Object.keys(out);
+  const prefix = longestCommonPrefix(keys);
+  for(let key of keys) {
+    // Update each item's imports
+    const imports = Object.keys(out[key].imports);
+    for(let thisImport of imports) {
+      out[key].imports[thisImport] = out[key].imports[thisImport].slice(prefix.length);
+    }
+
+    // Update the item itself
+    out[key.slice(prefix.length)] = out[key];
+    delete out[key];
+  }
+  return out;
+}
+
+function longestCommonPrefix(strs) {
+    if (strs.length === 0) return "";
+    let prefix = strs[0];
+
+    for (let i = 1; i < strs.length; i++) {
+        while (strs[i].indexOf(prefix) !== 0) {
+            prefix = prefix.substring(0, prefix.length - 1);
+            if (prefix === "") return "";
+        }
+    }
+
+    return prefix;
 }
 
 function removeComments(source) {
