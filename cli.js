@@ -18,4 +18,6 @@ program
     .option('-v, --circom-version <circomVersion>', 'Specify the Circom version (e.g. "v2.1.8")')
     .action(verify);
 
+// TODO command to deploy a circuit verifier, verify its contract and circuit
+
 program.parse(process.argv);
