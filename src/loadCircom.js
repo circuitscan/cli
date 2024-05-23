@@ -1,5 +1,5 @@
 import {readFileSync} from 'node:fs';
-import {dirname, join, resolve} from 'node:path';
+import {dirname, basename, join, resolve} from 'node:path';
 
 import {findClosestFile} from './utils.js';
 
@@ -96,6 +96,10 @@ Consider creating a circomkit.json file to specify more search locations.
 
 function shortenFilenames(out) {
   const keys = Object.keys(out);
+  if(keys.length === 0) return out;
+  else if(keys.length === 1) return {
+    [basename(keys[0])]: out[keys[0]],
+  };
   const prefix = longestCommonPrefix(keys);
   for(let key of keys) {
     // Update each item's imports
