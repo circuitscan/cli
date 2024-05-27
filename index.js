@@ -1,12 +1,18 @@
 import {relative, dirname} from 'node:path';
 
 import loadCircom from './src/loadCircom.js';
+import {findChainByName} from './src/chains.js';
 
 const defaultCircomPath = 'circom-v2.1.8';
 const serverURL = 'http://localhost:9000/2015-03-31/functions/function/invocations';
+const circomCompilerURL = 'http://localhost:9001/2015-03-31/functions/function/invocations';
 
-// TODO support passing chain name too
 export async function verify(file, chainId, contractAddr, options) {
+  if(isNaN(chainId)) {
+    const chain = findChainByName(chainId);
+    if(!chain) throw new Error('invalid_chain');
+    chainId = chain.chain.id;
+  }
   const compiled = await compileFile(file, options);
   const verified = await verifyCircuit(compiled.pkgName, chainId, contractAddr, options);
   console.log(verified);
@@ -48,7 +54,7 @@ async function compileFile(file, options) {
   console.log(event);
 
   // TODO status report during compilation
-  const response = await fetch(serverURL, {
+  const response = await fetch(circomCompilerURL, {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',
@@ -71,7 +77,7 @@ async function compileFile(file, options) {
 async function verifyCircuit(pkgName, chainId, contractAddr, options) {
   const event = {
     payload: {
-      action: 'verify',
+      action: 'verifyCircom',
       pkgName,
       chainId,
       contract: contractAddr,
@@ -93,7 +99,7 @@ async function verifyCircuit(pkgName, chainId, contractAddr, options) {
   const body = 'body' in data ? JSON.parse(data.body) : data;
   if('errorType' in body) {
     console.error(body.errorMessage);
-    throw new Error('Invalid compilation result');
+    throw new Error('Verification error');
   }
 
   return body;

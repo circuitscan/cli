@@ -12,7 +12,7 @@ program
 
 program
     .command('verify <mainCircomFile> <chainId> <verifierContractAddress>')
-    .description('Verify verifier contracts by their circom sources')
+    .description('Verify verifier contracts by their circom sources. Can also specify chain by name.')
     .option('-p, --protocol <protocol>', 'Specify the protocol: groth16 (default), fflonk, plonk (overrides circomkit.json if available)')
     .option('-k, --proving-key <provingKey>', 'Specify the proving key url (i.e. for Groth16 trusted setups)')
     .option('-v, --circom-version <circomVersion>', 'Specify the Circom version (e.g. "v2.1.8")')

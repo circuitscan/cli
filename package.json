@@ -17,6 +17,7 @@
     "mocha": "^10.4.0"
   },
   "dependencies": {
-    "commander": "^12.0.0"
+    "commander": "^12.0.0",
+    "viem": "^2.12.5"
   }
 }
