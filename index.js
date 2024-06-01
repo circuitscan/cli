@@ -2,13 +2,16 @@ import {relative, dirname} from 'node:path';
 
 import loadCircom from './src/loadCircom.js';
 import {findChainByName} from './src/chains.js';
-import {generateRandomString} from './src/utils.js';
+import {generateRandomString, fetchJson, delay, instanceSizes} from './src/utils.js';
 import {StatusLogger} from './src/StatusLogger.js';
 
 const defaultCircomPath = 'circom-v2.1.8';
+// TODO create a cloudformation template for the pkg_association service
 const serverURL = 'http://localhost:9000/2015-03-31/functions/function/invocations';
-const circomCompilerURL = 'http://localhost:9001/2015-03-31/functions/function/invocations';
+// Default running on AWS Lambda max 10GB ram
+const circomCompilerURL = 'https://uvopzbfbfz5i5m4i3tsgq7rjeu0glwdl.lambda-url.us-west-2.on.aws/';
 const statusURL = 'https://circuitscan-blobs.s3.us-west-002.backblazeb2.com/status/';
+const stackStarterURL = 'https://fydvjclemuhxdzsv2treynl32q0rwtpp.lambda-url.us-west-2.on.aws/';
 
 export async function verify(file, chainId, contractAddr, options) {
   if(isNaN(chainId)) {
@@ -16,16 +19,90 @@ export async function verify(file, chainId, contractAddr, options) {
     if(!chain) throw new Error('invalid_chain');
     chainId = chain.chain.id;
   }
-  const compiled = await compileFile(file, options);
+  let curCompilerURL = circomCompilerURL;
+  let stackId;
+  if(options.localhost) {
+    if(isNaN(options.localhost)) throw new Error('Invalid localhost port specified');
+    curCompilerURL = `http://localhost:${options.localhost}/2015-03-31/functions/function/invocations`;
+  } else if(options.instance) {
+    stackId = await startInstance(options);
+    curCompilerURL = `https://${stackId}.circuitscan.org/2015-03-31/functions/function/invocations`;
+  }
+  const compiled = await compileFile(file, options, { curCompilerURL });
   const verified = await verifyCircuit(compiled.pkgName, chainId, contractAddr, options);
   if(verified && verified.status === 'verified') {
     console.log(`# Completed successfully!`);
   } else {
     console.log(`# Verification failed.`);
   }
+  if(stackId) {
+    await stopInstance(stackId);
+  }
 }
 
-async function compileFile(file, options) {
+async function startInstance(options) {
+  if(!(options.instance in instanceSizes))
+    throw new Error('Invalid instance size');
+  const instanceType = instanceSizes[options.instance];
+  // instance starting...
+  console.log(`# Starting ${instanceType} instance...`);
+  const startResult = await fetchJson(stackStarterURL, {
+    action: 'start',
+    params: { instanceType },
+  });
+  if(!('stackId' in startResult)) {
+    console.error(startResult);
+    throw new Error('Invalid response starting instance.');
+  }
+  console.log('# Waiting for instance to boot...');
+  const stackId = startResult.stackId.match(
+    /arn:aws:cloudformation:[^:]+:[^:]+:stack\/([^\/]+)/)[1];
+  const publicHost = `https://${stackId}.circuitscan.org`;
+  let statusResult;
+  while(statusResult = await fetchJson(stackStarterURL, {
+    action: 'status',
+    params: { stackId },
+  })) {
+    if(statusResult.status === 'CREATE_COMPLETE') break;
+    else if(statusResult.status !== 'CREATE_IN_PROGRESS')
+      throw new Error('Instance failed to start.');
+    process.stdout.write('.');
+    await delay(5000);
+  }
+  console.log('# Waiting for service to be ready...');
+  let serviceResult;
+  while(true) {
+    await delay(5000);
+    process.stdout.write('.');
+    try {
+      serviceResult = await fetchJson(publicHost, {
+        payload: {
+          action: 'invalid',
+        }
+      });
+      break;
+    } catch(error) {
+      if(error.cause && (error.cause.code !== 'ENOTFOUND')) throw error;
+      if(!error.cause) break;
+    }
+  }
+
+  return stackId;
+}
+
+async function stopInstance(stackId) {
+  console.log(`# Stopping instance ${stackId}...`);
+  const stopResult = await fetchJson(stackStarterURL, {
+    action: 'stop',
+    params: { stackId },
+  });
+  if(stopResult.message !== 'Stack deletion initiated') {
+    console.log(stopResult);
+    throw new Error('ERROR_WHILE_DELETING_STACK');
+  }
+}
+
+async function compileFile(file, options, {curCompilerURL}) {
   const loaded = loadCircom(file);
   const shortFile = Object.keys(loaded.files)[0];
   if(!loaded.files[shortFile].mainComponent) throw new Error('MISSING_MAIN_COMPONENT');
@@ -67,7 +144,7 @@ async function compileFile(file, options) {
     ${Object.keys(files).join('\n    ')}
 `);
 
-  const response = await fetch(circomCompilerURL, {
+  const response = await fetch(curCompilerURL, {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',

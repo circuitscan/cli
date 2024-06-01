@@ -45,3 +45,31 @@ export function generateRandomString(length) {
     }
     return result;
 }
+
+export async function fetchJson(url, body) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  const data = await response.json();
+  return data;
+}
+
+export function delay(ms) {
+  return new Promise(resolve => setTimeout(() => resolve(), ms));
+}
+
+export const instanceSizes = {
+  4: 't3.medium',
+//   32: 'x2gd.large',
+//   64: 'x2gd.xlarge',
+//   128: 'x2gd.2xlarge',
+//   256: 'x2gd.4xlarge',
+//   512: 'x2gd.8xlarge',
+//   768: 'x2gd.12xlarge',
+//   1024: 'x2gd.16xlarge',
+}
