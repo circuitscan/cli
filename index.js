@@ -130,6 +130,8 @@ async function compileFile(file, options, {curCompilerURL}) {
       files,
       // TODO support passing filename for base64 if small enough or temp upload otherwise
       finalZkey: options.provingKey,
+      // TODO support custom snarkjs version
+      snarkjsVersion: undefined,
       circomPath: options.circomVersion ? 'circom-' + options.circomVersion : defaultCircomPath,
       protocol: options.protocol || (loaded.circomkit && loaded.circomkit.protocol) || 'groth16',
       circuit: {
