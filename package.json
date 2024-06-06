@@ -1,11 +1,15 @@
 {
-  "name": "circuitscan-cli",
-  "version": "0.0.1-alpha",
+  "name": "circuitscan",
+  "version": "0.0.2-alpha",
   "main": "index.js",
   "type": "module",
   "author": "numtel <ben@latenightsketches.com>",
   "license": "MIT",
   "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/circuitscan/cli.git"
+  },
   "bin": {
     "circuitscan": "./cli.js"
   },

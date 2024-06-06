@@ -51,7 +51,7 @@ export class StatusLogger {
         this.previousLength = newData.length;
       }
     } catch (error) {
-      if(error.message !== 'not_found') {
+      if(!error.message.startsWith('Unexpected token')) {
         console.error('Error fetching data:', error);
       }
     }

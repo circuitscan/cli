@@ -6,11 +6,10 @@ import {generateRandomString, fetchJson, delay, instanceSizes} from './src/utils
 import {StatusLogger} from './src/StatusLogger.js';
 
 const defaultCircomPath = 'circom-v2.1.8';
-// TODO create a cloudformation template for the pkg_association service
-const serverURL = 'http://localhost:9000/2015-03-31/functions/function/invocations';
+const serverURL = 'https://rekwakezbjsulha5ypzpjk3c7u0rfcgp.lambda-url.us-west-2.on.aws/';
 // Default running on AWS Lambda max 10GB ram
 const circomCompilerURL = 'https://uvopzbfbfz5i5m4i3tsgq7rjeu0glwdl.lambda-url.us-west-2.on.aws/';
-const statusURL = 'https://circuitscan-blobs.s3.us-west-002.backblazeb2.com/status/';
+const statusURL = 'https://blob.circuitscan.org/status/';
 const stackStarterURL = 'https://fydvjclemuhxdzsv2treynl32q0rwtpp.lambda-url.us-west-2.on.aws/';
 
 export async function verify(file, chainId, contractAddr, options) {
@@ -159,7 +158,6 @@ async function compileFile(file, options, {curCompilerURL}) {
   const data = await response.json();
   const body = 'body' in data ? JSON.parse(data.body) : data;
   if('errorType' in body) {
-    console.error(body.errorMessage);
     throw new Error('Invalid compilation result');
   }
 
@@ -185,7 +183,7 @@ async function verifyCircuit(pkgName, chainId, contractAddr, options) {
     },
     body: JSON.stringify(event),
   });
-  if (!response.ok) {
+  if (!response.ok && response.status !== 400) {
     throw new Error('Network response was not ok');
   }
   const data = await response.json();
