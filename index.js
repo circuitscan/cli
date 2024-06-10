@@ -1,23 +1,81 @@
 import {relative, dirname} from 'node:path';
+import { isHex } from 'viem';
 
 import loadCircom from './src/loadCircom.js';
-import {findChainByName} from './src/chains.js';
+import {findChain} from './src/chains.js';
 import {generateRandomString, fetchJson, delay, instanceSizes} from './src/utils.js';
 import {StatusLogger} from './src/StatusLogger.js';
+import {
+  compileContract,
+  deployContract,
+  verifyOnEtherscan,
+  checkEtherscanStatus,
+} from './src/deployer.js';
 
 const defaultCircomPath = 'circom-v2.1.8';
 const serverURL = 'https://rekwakezbjsulha5ypzpjk3c7u0rfcgp.lambda-url.us-west-2.on.aws/';
 // Default running on AWS Lambda max 10GB ram
 const circomCompilerURL = 'https://uvopzbfbfz5i5m4i3tsgq7rjeu0glwdl.lambda-url.us-west-2.on.aws/';
-const statusURL = 'https://blob.circuitscan.org/status/';
 const stackStarterURL = 'https://fydvjclemuhxdzsv2treynl32q0rwtpp.lambda-url.us-west-2.on.aws/';
+const blobUrl = 'https://blob.circuitscan.org/';
 
 export async function verify(file, chainId, contractAddr, options) {
-  if(isNaN(chainId)) {
-    const chain = findChainByName(chainId);
-    if(!chain) throw new Error('invalid_chain');
-    chainId = chain.chain.id;
+  const chain = findChain(chainId);
+  if(!chain) throw new Error('invalid_chain');
+  const {curCompilerURL, stackId} = await determineCompilerUrl(options);
+  try {
+    const compiled = await compileFile(file, options, { curCompilerURL });
+    await verifyCircuit(compiled.pkgName, chain.chain.id, contractAddr, options);
+  } catch(error) {
+    console.error(error);
   }
+  if(stackId) {
+    await stopInstance(stackId);
+  }
+}
+
+export async function deploy(file, chainId, options) {
+  const chain = findChain(chainId);
+  if(!chain) throw new Error('invalid_chain');
+  const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
+  if(!privateKey || !isHex(privateKey) || privateKey.length !== 66)
+    throw new Error('INVALID_DEPLOYER_PRIVATE_KEY')
+  if(!(chain.apiKeyEnvVar in process.env))
+    throw new Error('MISSING_' + chain.apiKeyEnvVar);
+  const {curCompilerURL, stackId} = await determineCompilerUrl(options);
+  let instanceRunning = !!stackId;
+  try {
+    const compiled = await compileFile(file, options, { curCompilerURL });
+    if(stackId) {
+      await stopInstance(stackId);
+      instanceRunning = false;
+    }
+    const contractSource = await (await fetch(`${blobUrl}${compiled.pkgName}/verifier.sol`)).text();
+    const solcOutput = compileContract(contractSource);
+    const contractAddress = await deployContract(solcOutput, chain.chain, privateKey);
+    let verifyResult = false;
+    while(!verifyResult || verifyResult.result.startsWith('Unable to locate ContractCode')) {
+      await delay(5000);
+      verifyResult = await verifyOnEtherscan(chain, contractAddress, contractSource, solcOutput.version);
+    }
+    if(!verifyResult.status === '1') throw new Error('UNABLE_TO_VERIFY_CONTRACT');
+    let contractStatus = {};
+    console.log(`# Waiting for verification on Etherscan...`);
+    while(['Already Verified', 'Pass - Verified'].indexOf(contractStatus.result) === -1) {
+      await delay(5000);
+      contractStatus = await checkEtherscanStatus(chain, verifyResult.result);
+      console.log(`> ${contractStatus.result}`);
+    }
+    await verifyCircuit(compiled.pkgName, chain.chain.id, contractAddress, options);
+  } catch(error) {
+    console.error(error);
+  }
+  if(stackId && instanceRunning) {
+    await stopInstance(stackId);
+  }
+}
+
+async function determineCompilerUrl(options) {
   let curCompilerURL = circomCompilerURL;
   let stackId;
   if(options.localhost) {
@@ -27,16 +85,7 @@ export async function verify(file, chainId, contractAddr, options) {
     stackId = await startInstance(options);
     curCompilerURL = `https://${stackId}.circuitscan.org/2015-03-31/functions/function/invocations`;
   }
-  const compiled = await compileFile(file, options, { curCompilerURL });
-  const verified = await verifyCircuit(compiled.pkgName, chainId, contractAddr, options);
-  if(verified && verified.status === 'verified') {
-    console.log(`# Completed successfully!`);
-  } else {
-    console.log(`# Verification failed.`);
-  }
-  if(stackId) {
-    await stopInstance(stackId);
-  }
+  return {curCompilerURL, stackId};
 }
 
 async function startInstance(options) {
@@ -120,7 +169,7 @@ async function compileFile(file, options, {curCompilerURL}) {
 
   const requestId = generateRandomString(40);
   // status report during compilation
-  const status = new StatusLogger(`${statusURL}${requestId}.json`, 3000);
+  const status = new StatusLogger(`${blobUrl}status/${requestId}.json`, 3000);
 
   const event = {
     payload: {
@@ -192,6 +241,12 @@ async function verifyCircuit(pkgName, chainId, contractAddr, options) {
     throw new Error(`Verification error: ${body.errorMessage}`);
   }
 
+  if(body && body.status === 'verified') {
+    console.log(`# Completed successfully!`);
+    console.log(`\nhttps://circuitscan.org/chain/${chainId}/address/${contractAddr}`);
+  } else {
+    console.log(`# Verification failed.`);
+  }
   return body;
 }
 

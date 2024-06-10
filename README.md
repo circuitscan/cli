@@ -71,7 +71,59 @@ Found 15 file(s):
 
 ### deploy
 
-NYI!
+```
+Usage: circuitscan deploy [options] <mainCircomFile> <chainId>
+
+Deploy verifier contract by their circom sources. Can also specify chain by name.
+
+Options:
+  -p, --protocol <protocol>             Specify the protocol: groth16 (default), fflonk, plonk (overrides circomkit.json if available)
+  -k, --proving-key <provingKey>        Specify the proving key url (optional, for Groth16 trusted setups)
+  -v, --circom-version <circomVersion>  Specify the Circom version (e.g. "v2.1.8")
+  -i, --instance <memorySize>           Specify the memory (GB) of compiler instance: 4 for testing (default: 10GB lambda, faster init for small circuits)
+  -l, --localhost <localPort>           Use a circom compiler container running on a specific port
+  -h, --help                            display help for command
+
+```
+
+> [!IMPORTANT]
+> `DEPLOYER_PRIVATE_KEY` environment variable and a corresponding Etherscan API key is required
+
+| name         | apiKeyEnvVar              |
+|--------------|---------------------------|
+| holesky      | ETHERSCAN_API_KEY         |
+| sepolia      | ETHERSCAN_API_KEY         |
+| mainnet      | ETHERSCAN_API_KEY         |
+| optimism     | OPTIMISM_ETHERSCAN_API_KEY|
+| polygon      | POLYGON_ETHERSCAN_API_KEY |
+| fantom       | FANTOM_ETHERSCAN_API_KEY  |
+| arbitrum     | ARBITRUM_ETHERSCAN_API_KEY|
+| arbitrumNova | ARBITRUM_NOVA_ETHERSCAN_API_KEY|
+| gnosis       | GNOSIS_ETHERSCAN_API_KEY  |
+| celo         | CELO_ETHERSCAN_API_KEY    |
+| base         | BASE_ETHERSCAN_API_KEY    |
+
+Example usage using `.env` for configuration:
+
+```
+$ dotenv run circuitscan deploy circuits/multiplier.circom polygon
+Found 1 file(s):
+    multiplier.circom
+
+> Compiling multiplier-worried-aqua-roundworm...
+> Downloading PTAU... @ 0.0207s
+> Groth16 setup with random entropy... @ 0.0211s
+> Exporting verification key and solidity verifier... @ 0.0676s
+> Storing build artifacts... @ 0.0860s
+# Sent transaction 0x5b208fa766f744840fcf3827b7f2573f2ab1ec03c200c294dd6c73c98c6108f2
+# Deployed to 0x269e831b930f4c1ec7eee28aa53e5756b0f96d0c
+# Waiting for verification on Etherscan...
+> Pass - Verified
+# Verifying circuit...
+# Completed successfully!
+
+https://circuitscan.org/chain/137/address/0x269e831b930f4c1ec7eee28aa53e5756b0f96d0c
+```
 
 ## License
 
