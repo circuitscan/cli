@@ -65,11 +65,11 @@ export function delay(ms) {
 
 export const instanceSizes = {
   4: 't3.medium',
-//   16: 'r7i.large',
-//   32: 'r7i.xlarge',
-//   64: 'r7i.2xlarge',
-//   128: 'r7i.4xlarge',
-//   256: 'r7i.8xlarge',
-//   384: 'r7i.12xlarge',
-//   1536: 'r7i.16xlarge',
+  16: 'r7i.large',
+  32: 'r7i.xlarge',
+  64: 'r7i.2xlarge',
+  128: 'r7i.4xlarge',
+  256: 'r7i.8xlarge',
+  384: 'r7i.12xlarge',
+  1536: 'r7i.16xlarge',
 }

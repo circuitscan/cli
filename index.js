@@ -17,7 +17,7 @@ const serverURL = 'https://rekwakezbjsulha5ypzpjk3c7u0rfcgp.lambda-url.us-west-2
 // Default running on AWS Lambda max 10GB ram
 const lambdaCompilerURL = 'https://uvopzbfbfz5i5m4i3tsgq7rjeu0glwdl.lambda-url.us-west-2.on.aws/';
 const ec2CompilerURL = 'https://yps4edoigeexpc2hzhvswru3b40mfbal.lambda-url.us-west-2.on.aws/';
-const blobUrl = 'https://blob.circuitscan.org/';
+const blobUrl = 'https://circuitscan-blob.s3.us-west-2.amazonaws.com/';
 
 export async function verify(file, chainId, contractAddr, options) {
   const chain = findChain(chainId);
@@ -42,7 +42,7 @@ export async function deploy(file, chainId, options) {
   const {curCompilerURL} = await determineCompilerUrl(options);
   try {
     const compiled = await compileFile(file, options, { curCompilerURL });
-    const contractSource = await (await fetch(`${blobUrl}${compiled.pkgName}/verifier.sol`)).text();
+    const contractSource = await (await fetch(`${blobUrl}build/${compiled.pkgName}/verifier.sol`)).text();
     const solcOutput = compileContract(contractSource);
     const contractAddress = await deployContract(solcOutput, chain.chain, privateKey);
     let verifyResult = false;

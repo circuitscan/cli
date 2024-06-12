@@ -49,6 +49,7 @@ export class StatusLogger {
           this.startTime = newData[0].time;
         }
         const newItems = newData.slice(this.previousLength);
+        // TODO display memory usage as graphs
         console.log(newItems.map(item => `> ${item.msg} ${item.time !== this.startTime ? `@ ${(item.time - this.startTime).toFixed(4)}s` : ''}`).join('\n'));
         this.previousLength = newData.length;
       }
