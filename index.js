@@ -92,6 +92,7 @@ async function compileFile(file, options, {curCompilerURL}) {
   }, {});
 
   const requestId = generateRandomString(40);
+  console.log(`# Request ID: ${requestId}`);
   // status report during compilation
   const status = new StatusLogger(`${blobUrl}status/${requestId}.json`, 3000);
   if('instance' in options && !(options.instance in instanceSizes))
