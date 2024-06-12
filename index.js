@@ -15,41 +15,33 @@ import {
 const defaultCircomPath = 'circom-v2.1.8';
 const serverURL = 'https://rekwakezbjsulha5ypzpjk3c7u0rfcgp.lambda-url.us-west-2.on.aws/';
 // Default running on AWS Lambda max 10GB ram
-const circomCompilerURL = 'https://uvopzbfbfz5i5m4i3tsgq7rjeu0glwdl.lambda-url.us-west-2.on.aws/';
-const stackStarterURL = 'https://fydvjclemuhxdzsv2treynl32q0rwtpp.lambda-url.us-west-2.on.aws/';
+const lambdaCompilerURL = 'https://uvopzbfbfz5i5m4i3tsgq7rjeu0glwdl.lambda-url.us-west-2.on.aws/';
+const ec2CompilerURL = 'https://yps4edoigeexpc2hzhvswru3b40mfbal.lambda-url.us-west-2.on.aws/';
 const blobUrl = 'https://blob.circuitscan.org/';
 
 export async function verify(file, chainId, contractAddr, options) {
   const chain = findChain(chainId);
-  if(!chain) throw new Error('invalid_chain');
-  const {curCompilerURL, stackId} = await determineCompilerUrl(options);
+  if(!chain) throw new Error('INVALID_CHAIN');
+  const {curCompilerURL} = await determineCompilerUrl(options);
   try {
     const compiled = await compileFile(file, options, { curCompilerURL });
     await verifyCircuit(compiled.pkgName, chain.chain.id, contractAddr, options);
   } catch(error) {
     console.error(error);
   }
-  if(stackId) {
-    await stopInstance(stackId);
-  }
 }
 
 export async function deploy(file, chainId, options) {
   const chain = findChain(chainId);
-  if(!chain) throw new Error('invalid_chain');
+  if(!chain) throw new Error('INVALID_CHAIN');
   const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
   if(!privateKey || !isHex(privateKey) || privateKey.length !== 66)
     throw new Error('INVALID_DEPLOYER_PRIVATE_KEY')
   if(!(chain.apiKeyEnvVar in process.env))
     throw new Error('MISSING_' + chain.apiKeyEnvVar);
-  const {curCompilerURL, stackId} = await determineCompilerUrl(options);
-  let instanceRunning = !!stackId;
+  const {curCompilerURL} = await determineCompilerUrl(options);
   try {
     const compiled = await compileFile(file, options, { curCompilerURL });
-    if(stackId) {
-      await stopInstance(stackId);
-      instanceRunning = false;
-    }
     const contractSource = await (await fetch(`${blobUrl}${compiled.pkgName}/verifier.sol`)).text();
     const solcOutput = compileContract(contractSource);
     const contractAddress = await deployContract(solcOutput, chain.chain, privateKey);
@@ -70,86 +62,18 @@ export async function deploy(file, chainId, options) {
   } catch(error) {
     console.error(error);
   }
-  if(stackId && instanceRunning) {
-    await stopInstance(stackId);
-  }
 }
 
 async function determineCompilerUrl(options) {
-  let curCompilerURL = circomCompilerURL;
-  let stackId;
+  let curCompilerURL = lambdaCompilerURL;
   if(options.localhost) {
     if(isNaN(options.localhost)) throw new Error('Invalid localhost port specified');
     curCompilerURL = `http://localhost:${options.localhost}/2015-03-31/functions/function/invocations`;
   } else if(options.instance) {
-    stackId = await startInstance(options);
-    curCompilerURL = `https://${stackId}.circuitscan.org/2015-03-31/functions/function/invocations`;
+    curCompilerURL = ec2CompilerURL;
   }
-  return {curCompilerURL, stackId};
+  return {curCompilerURL};
 }
-
-async function startInstance(options) {
-  if(!(options.instance in instanceSizes))
-    throw new Error('Invalid instance size');
-  const instanceType = instanceSizes[options.instance];
-  // instance starting...
-  console.log(`# Starting ${instanceType} instance...`);
-  const startResult = await fetchJson(stackStarterURL, {
-    action: 'start',
-    params: { instanceType },
-  });
-  if(!('stackId' in startResult)) {
-    console.error(startResult);
-    throw new Error('Invalid response starting instance.');
-  }
-  console.log('# Waiting for instance to boot...');
-  const stackId = startResult.stackId.match(
-    /arn:aws:cloudformation:[^:]+:[^:]+:stack\/([^\/]+)/)[1];
-  const publicHost = `https://${stackId}.circuitscan.org`;
-  let statusResult;
-  while(statusResult = await fetchJson(stackStarterURL, {
-    action: 'status',
-    params: { stackId },
-  })) {
-    if(statusResult.status === 'CREATE_COMPLETE') break;
-    else if(statusResult.status !== 'CREATE_IN_PROGRESS')
-      throw new Error('Instance failed to start.');
-    process.stdout.write('.');
-    await delay(5000);
-  }
-  console.log('# Waiting for service to be ready...');
-  let serviceResult;
-  while(true) {
-    await delay(5000);
-    process.stdout.write('.');
-    try {
-      serviceResult = await fetchJson(publicHost, {
-        payload: {
-          action: 'invalid',
-        }
-      });
-      break;
-    } catch(error) {
-      if(error.cause && (error.cause.code !== 'ENOTFOUND')) throw error;
-      if(!error.cause) break;
-    }
-  }
-
-  return stackId;
-}
-
-async function stopInstance(stackId) {
-  console.log(`# Stopping instance ${stackId}...`);
-  const stopResult = await fetchJson(stackStarterURL, {
-    action: 'stop',
-    params: { stackId },
-  });
-  if(stopResult.message !== 'Stack deletion initiated') {
-    console.log(stopResult);
-    throw new Error('ERROR_WHILE_DELETING_STACK');
-  }
-}
-
 async function compileFile(file, options, {curCompilerURL}) {
   const loaded = loadCircom(file);
   const shortFile = Object.keys(loaded.files)[0];
@@ -170,10 +94,14 @@ async function compileFile(file, options, {curCompilerURL}) {
   const requestId = generateRandomString(40);
   // status report during compilation
   const status = new StatusLogger(`${blobUrl}status/${requestId}.json`, 3000);
+  if('instance' in options && !(options.instance in instanceSizes))
+    throw new Error('INVALID_INSTANCE_SIZE');
+  const instanceType = options.instance ? instanceSizes[options.instance] : undefined;
 
   const event = {
     payload: {
       requestId,
+      instanceType,
       action: 'build',
       files,
       // TODO support passing filename for base64 if small enough or temp upload otherwise
@@ -202,14 +130,24 @@ async function compileFile(file, options, {curCompilerURL}) {
     body: JSON.stringify(event),
   });
   if (!response.ok) {
-    throw new Error('Network response was not ok');
+    const body = await response.text();
+    throw new Error('Network response was not ok: ' + body);
   }
   const data = await response.json();
-  const body = 'body' in data ? JSON.parse(data.body) : data;
+  let body = 'body' in data ? JSON.parse(data.body) : data;
   if('errorType' in body) {
     throw new Error('Invalid compilation result');
   }
 
+  if(data.status === 'ok' && !('pkgName' in body)) {
+    console.log('# Instance started. Wait a few minutes for initialization...');
+    while(!status.lastData || !status.lastData.find(x => x.msg === 'Complete.')) {
+      await delay(5000);
+    }
+    const response = await fetch(`${blobUrl}instance-response/${requestId}.json`);
+    const data = await response.json();
+    body = JSON.parse(data.body);
+  }
   status.stop();
   return body;
 }

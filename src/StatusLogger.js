@@ -8,6 +8,7 @@ export class StatusLogger {
     this.startTime = 0;
     this.intervalId = null;
     this.stopped = false;
+    this.lastData = null;
     this.start();
   }
 
@@ -27,6 +28,7 @@ export class StatusLogger {
           }
           try {
             const json = JSON.parse(data);
+            this.lastData = json;
             resolve(json);
           } catch (e) {
             reject(e);
