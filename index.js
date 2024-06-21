@@ -66,10 +66,7 @@ export async function deploy(file, chainId, options) {
 
 async function determineCompilerUrl(options) {
   let curCompilerURL = lambdaCompilerURL;
-  if(options.localhost) {
-    if(isNaN(options.localhost)) throw new Error('Invalid localhost port specified');
-    curCompilerURL = `http://localhost:${options.localhost}/2015-03-31/functions/function/invocations`;
-  } else if(options.instance) {
+  if(options.instance) {
     curCompilerURL = ec2CompilerURL;
   }
   return {curCompilerURL};
@@ -94,7 +91,7 @@ async function compileFile(file, options, {curCompilerURL}) {
   const requestId = generateRandomString(40);
   console.log(`# Request ID: ${requestId}`);
   // status report during compilation
-  const status = new StatusLogger(`${blobUrl}status/${requestId}.json`, 3000);
+  const status = new StatusLogger(`${blobUrl}status/${requestId}.json`, 3000, Number(options.instance || 10));
   if('instance' in options && !(options.instance in instanceSizes))
     throw new Error('INVALID_INSTANCE_SIZE');
   const instanceType = options.instance ? instanceSizes[options.instance] : undefined;

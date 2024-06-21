@@ -18,7 +18,6 @@ program
     .option('-k, --proving-key <provingKey>', 'Specify the proving key url (optional, for Groth16 trusted setups)')
     .option('-v, --circom-version <circomVersion>', 'Specify the Circom version (e.g. "v2.1.8")')
     .option('-i, --instance <memorySize>', `Specify the memory (GB) of compiler instance: ${Object.keys(instanceSizes).join(', ')} (default: 10GB lambda, faster init for small circuits)`)
-    .option('-l, --localhost <localPort>', 'Use a circom compiler container running on a specific port')
     .action(verify);
 
 // TODO .option('-b, --browser-wallet', 'Send transaction in browser instead of by passing private key env var')
@@ -29,7 +28,6 @@ program
     .option('-k, --proving-key <provingKey>', 'Specify the proving key url (optional, for Groth16 trusted setups)')
     .option('-v, --circom-version <circomVersion>', 'Specify the Circom version (e.g. "v2.1.8")')
     .option('-i, --instance <memorySize>', `Specify the memory (GB) of compiler instance: ${Object.keys(instanceSizes).join(', ')} (default: 10GB lambda, faster init for small circuits)`)
-    .option('-l, --localhost <localPort>', 'Use a circom compiler container running on a specific port')
     .action(deploy);
 
 program.parse(process.argv);
