@@ -1,5 +1,9 @@
-import {accessSync} from 'node:fs';
+import {accessSync, readFileSync} from 'node:fs';
 import {dirname, join, resolve} from 'node:path';
+
+export function getPackageJson() {
+  return JSON.parse(readFileSync('./package.json', 'utf8'));
+}
 
 export function findClosestFile(dir, filename) {
     const fullPath = resolve(dir);  // Resolves the directory to an absolute path

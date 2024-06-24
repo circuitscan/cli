@@ -2,14 +2,14 @@
 import {Command} from 'commander';
 
 import {verify, deploy} from './index.js';
-import {instanceSizes} from './src/utils.js';
+import {instanceSizes, getPackageJson} from './src/utils.js';
 
 const program = new Command();
 
 program
     .name('circuitscan')
     .description('CLI tool to verify verifier contracts by their circom sources')
-    .version('0.0.1');
+    .version(getPackageJson().version);
 
 program
     .command('verify <mainCircomFile> <chainId> <verifierContractAddress>')
