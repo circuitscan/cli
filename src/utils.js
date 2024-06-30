@@ -1,6 +1,21 @@
 import {accessSync, readFileSync} from 'node:fs';
 import {dirname, join, resolve} from 'node:path';
 
+export const MAX_POST_SIZE = 6 * 1024 ** 2; // 6 MB
+
+export function prepareProvingKey(input) {
+  // Not specified
+  if(!input) return undefined;
+  // Externally hosted
+  if(typeof input === 'string' && input.startsWith('https')) return input;
+  const output = readFileSync(input).toString('base64');
+  if(output.length > MAX_POST_SIZE)
+    throw new Error(`Proving key too large for inline upload. (Max ${formatBytes(MAX_POST_SIZE)}) Host on https server instead.`);
+
+  // Send inline
+  return output;
+}
+
 export function getPackageJson() {
   return JSON.parse(readFileSync('./package.json', 'utf8'));
 }
@@ -69,6 +84,7 @@ export function delay(ms) {
 
 export const instanceSizes = {
   4: 't3.medium',
+  8: 't3.large',
   16: 'r7i.large',
   32: 'r7i.xlarge',
   64: 'r7i.2xlarge',

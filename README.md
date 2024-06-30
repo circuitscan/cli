@@ -16,6 +16,9 @@ npm install -g circuitscan
 
 ## Usage
 
+> [!TIP]
+> Close a running compiler job, then use `--resume` later complete verification or deployment. Alternatively, use `--resume` to duplicate a verifier, avoiding waiting for the circuit to compile again.
+
 ### verify
 
 ```
@@ -25,10 +28,10 @@ Verify verifier contracts by their circom sources. Can also specify chain by nam
 
 Options:
   -p, --protocol <protocol>             Specify the protocol: groth16 (default), fflonk, plonk (overrides circomkit.json if available)
-  -k, --proving-key <provingKey>        Specify the proving key url (optional, for Groth16 trusted setups)
+  -k, --proving-key <provingKey>        Specify the proving key filename or url (optional, for Groth16 trusted setups). Must be https hosted if >6 MB
   -v, --circom-version <circomVersion>  Specify the Circom version (e.g. "v2.1.8")
-  -i, --instance <memorySize>           Specify the memory (GB) of compiler instance: 4 for testing (default: 10GB lambda, faster init for small circuits)
-  -l, --localhost <localPort>           Use a circom compiler container running on a specific port
+  -i, --instance <memorySize>           Specify the memory (GB) of compiler instance: 4, 8, 16, 32, 64, 128, 256, 384, 512 (default: 10GB lambda, faster init for small circuits)
+  -r, --resume <requestId>              In case of errors during compilation, reattach to a job and attempt a new verification. Overrides all other options.
   -h, --help                            display help for command
 
 ```
@@ -36,9 +39,6 @@ Options:
 Scans for dependent included sources for bundle. Includes paths in [`circomkit.json`](https://github.com/erhant/circomkit) if available.
 
 Example using an already existing groth16 setup:
-
-> [!NOTE]
-> [TODO: must be hosted on public https server](https://github.com/circuitscan/cli/blob/main/index.js#L131)
 
 ```
 $ circuitscan verify -k https://circuitscan-blobs.clonk.me/test-semaphore.zkey ~/semaphore/packages/circuits/src/main/semaphore.circom sepolia 0x73885e40715F6D77C4Ab2863756e4ee523f3be15
@@ -78,13 +78,18 @@ Deploy verifier contract by their circom sources. Can also specify chain by name
 
 Options:
   -p, --protocol <protocol>             Specify the protocol: groth16 (default), fflonk, plonk (overrides circomkit.json if available)
-  -k, --proving-key <provingKey>        Specify the proving key url (optional, for Groth16 trusted setups)
+  -k, --proving-key <provingKey>        Specify the proving key filename or url (optional, for Groth16 trusted setups). Must be https hosted if >6 MB
   -v, --circom-version <circomVersion>  Specify the Circom version (e.g. "v2.1.8")
-  -i, --instance <memorySize>           Specify the memory (GB) of compiler instance: 4 for testing (default: 10GB lambda, faster init for small circuits)
-  -l, --localhost <localPort>           Use a circom compiler container running on a specific port
+  -i, --instance <memorySize>           Specify the memory (GB) of compiler instance: 4, 8, 16, 32, 64, 128, 256, 384, 512 (default: 10GB lambda, faster init for small circuits)
+  -r, --resume <requestId>              In case of errors during compilation, reattach to a job and attempt a new deploy. Overrides all other options.
   -h, --help                            display help for command
 
 ```
+
+> [!TIP]
+> If there's a timeout waiting for a contract deployment transaction, wait for the transaction to be included on chain then use the `verify` command passing the new contract address.
+>
+> The contract will have to be verified manually on Etherscan. Find the contract source at `https://circuitscan-blob.s3.us-west-2.amazonaws.com/build/<build-name-adjective-animal>/verifier.sol`
 
 > [!IMPORTANT]
 > `DEPLOYER_PRIVATE_KEY` environment variable and a corresponding Etherscan API key is required

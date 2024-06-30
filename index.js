@@ -3,7 +3,13 @@ import { isHex } from 'viem';
 
 import loadCircom from './src/loadCircom.js';
 import {findChain} from './src/chains.js';
-import {generateRandomString, fetchJson, delay, instanceSizes} from './src/utils.js';
+import {
+  generateRandomString,
+  fetchJson,
+  delay,
+  instanceSizes,
+  prepareProvingKey,
+} from './src/utils.js';
 import {StatusLogger} from './src/StatusLogger.js';
 import {
   compileContract,
@@ -71,7 +77,23 @@ async function determineCompilerUrl(options) {
   }
   return {curCompilerURL};
 }
+
+async function resumeCompileFile(options) {
+  const requestId = options.resume;
+  if('instance' in options && !(options.instance in instanceSizes))
+    throw new Error('INVALID_INSTANCE_SIZE');
+  // status report during compilation
+  const status = new StatusLogger(`${blobUrl}status/${requestId}.json`, 3000, Number(options.instance || 10));
+
+  while(!status.lastData || !status.lastData.find(x => x.msg === 'Complete.')) {
+    await delay(5000);
+  }
+  status.stop();
+  return { pkgName: status.lastData[0].msg.slice(10, -3) };
+}
+
 async function compileFile(file, options, {curCompilerURL}) {
+  if(options.resume) return resumeCompileFile(options);
   const loaded = loadCircom(file);
   const shortFile = Object.keys(loaded.files)[0];
   if(!loaded.files[shortFile].mainComponent) throw new Error('MISSING_MAIN_COMPONENT');
@@ -90,11 +112,11 @@ async function compileFile(file, options, {curCompilerURL}) {
 
   const requestId = generateRandomString(40);
   console.log(`# Request ID: ${requestId}`);
-  // status report during compilation
-  const status = new StatusLogger(`${blobUrl}status/${requestId}.json`, 3000, Number(options.instance || 10));
   if('instance' in options && !(options.instance in instanceSizes))
     throw new Error('INVALID_INSTANCE_SIZE');
   const instanceType = options.instance ? instanceSizes[options.instance] : undefined;
+  // status report during compilation
+  const status = new StatusLogger(`${blobUrl}status/${requestId}.json`, 3000, Number(options.instance || 10));
 
   const event = {
     payload: {
@@ -102,8 +124,7 @@ async function compileFile(file, options, {curCompilerURL}) {
       instanceType,
       action: 'build',
       files,
-      // TODO support passing filename for base64 if small enough or temp upload otherwise
-      finalZkey: options.provingKey,
+      finalZkey: prepareProvingKey(options.provingKey),
       // TODO support custom snarkjs version
       snarkjsVersion: undefined,
       circomPath: options.circomVersion ? 'circom-' + options.circomVersion : defaultCircomPath,
@@ -137,7 +158,7 @@ async function compileFile(file, options, {curCompilerURL}) {
     throw new Error('Invalid compilation result');
   }
 
-  if(data.status === 'ok' && !('pkgName' in body)) {
+  if(data.status === 'ok' && instanceType) {
     console.log('# Instance started. Wait a few minutes for initialization...');
     while(!status.lastData || !status.lastData.find(x => x.msg === 'Complete.')) {
       await delay(5000);
