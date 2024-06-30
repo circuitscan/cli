@@ -20,6 +20,7 @@ program
     .option('-i, --instance <memorySize>', `Specify the memory (GB) of compiler instance: ${Object.keys(instanceSizes).join(', ')} (default: 10GB lambda, faster init for small circuits)`)
     .action(verify);
 
+// TODO commands to deploy/verify using an existing build package (i.e. in case of tx failure)
 // TODO .option('-b, --browser-wallet', 'Send transaction in browser instead of by passing private key env var')
 program
     .command('deploy <mainCircomFile> <chainId>')
