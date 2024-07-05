@@ -1,6 +1,6 @@
 {
   "name": "circuitscan",
-  "version": "0.0.7-alpha",
+  "version": "0.0.8-alpha",
   "main": "index.js",
   "type": "module",
   "author": "numtel <ben@latenightsketches.com>",
@@ -21,8 +21,10 @@
     "mocha": "^10.4.0"
   },
   "dependencies": {
+    "@nomicfoundation/hardhat-verify": "^2.0.8",
     "ansi-escapes": "^7.0.0",
     "commander": "^12.0.0",
+    "hardhat": "npm:hardhat-plugin-noop@0.0.1",
     "solc": "^0.8.26",
     "viem": "^2.12.5"
   }

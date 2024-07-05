@@ -1,6 +1,7 @@
 import { createPublicClient, createWalletClient, http } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import solc from 'solc';
+import { Etherscan } from '@nomicfoundation/hardhat-verify/etherscan.js';
 
 import {delay} from './utils.js';
 
@@ -28,56 +29,35 @@ export async function deployContract(output, chain, privateKey) {
   return tx.contractAddress;
 }
 
-export async function checkEtherscanStatus(chain, guid) {
-  const params = new URLSearchParams({
-    module: 'contract',
-    action: 'checkverifystatus',
-    guid,
-    apikey: chain.apiKey,
-  });
-  const response = await fetch(`${chain.apiUrl}?${params.toString()}`, {
-    method: 'POST',
-  });
-
-  if (!response.ok) {
-    console.log(response);
-    throw new Error(`Error fetching status: ${response.statusText}`);
+export async function verifyOnEtherscan(chain, contractAddress, contractSource, solcOutput) {
+  let verifyResult = null;
+  let alreadyVerified = false;
+  const etherscan = new Etherscan(chain.apiKey, chain.apiUrl, '');
+  while(!verifyResult || verifyResult.isBytecodeMissingInNetworkError()) {
+    await delay(5000);
+    try {
+      verifyResult = await etherscan.verify(
+        contractAddress,
+        JSON.stringify(standardJson(contractSource)),
+        "contracts/Verified.sol:" + findContractName(contractSource),
+        'v' + solcOutput.version.replace('.Emscripten.clang', ''),
+        ''
+      );
+    } catch(error) {
+      if(error.constructor.name === 'ContractAlreadyVerifiedError') {
+        alreadyVerified = true;
+      } else if(error.constructor.name !== 'ContractVerificationMissingBytecodeError') {
+        throw error;
+      }
+    }
   }
-
-  const data = await response.json();
-  return data;
-}
-
-export async function verifyOnEtherscan(chain, address, contractSource, solcVersion) {
-  const params = new URLSearchParams({
-    module: 'contract',
-    action: 'verifysourcecode',
-    apikey: chain.apiKey,
-  });
-  const body = new URLSearchParams({
-    chainId: chain.chain.id,
-    codeformat: 'solidity-standard-json-input',
-    contractaddress: address,
-    sourceCode: JSON.stringify(standardJson(contractSource)),
-    contractname: "contracts/Verified.sol:" + findContractName(contractSource),
-    compilerversion: 'v' + solcVersion.replace('.Emscripten.clang', '')
-  });
-
-  const response = await fetch(`${chain.apiUrl}?${params.toString()}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: body.toString(),
-  });
-
-  if (!response.ok) {
-    console.log(response);
-    throw new Error(`Error verifying contract: ${response.statusText}`);
+  if(!alreadyVerified) {
+    console.log(`# Waiting for verification on Etherscan...`);
+    await delay(5000);
+    const contractStatus = await etherscan.getVerificationStatus(verifyResult.message);
+    console.log(`> ${contractStatus.message}`);
+    if(contractStatus.isFailure()) throw new Error('CONTRACT_VERIFICATION_FAILURE');
   }
-
-  const data = await response.json();
-  return data;
 }
 
 export function compileContract(source) {
@@ -94,7 +74,6 @@ export function compileContract(source) {
     version: solc.version(),
   };
 }
-
 
 function findContractName(soliditySource) {
   const regex = /contract\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\{/;

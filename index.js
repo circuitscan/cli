@@ -15,7 +15,6 @@ import {
   compileContract,
   deployContract,
   verifyOnEtherscan,
-  checkEtherscanStatus,
 } from './src/deployer.js';
 
 const defaultCircomPath = 'circom-v2.1.8';
@@ -51,19 +50,7 @@ export async function deploy(file, chainId, options) {
     const contractSource = await (await fetch(`${blobUrl}build/${compiled.pkgName}/verifier.sol`)).text();
     const solcOutput = compileContract(contractSource);
     const contractAddress = await deployContract(solcOutput, chain.chain, privateKey);
-    let verifyResult = false;
-    while(!verifyResult || verifyResult.result.startsWith('Unable to locate ContractCode')) {
-      await delay(5000);
-      verifyResult = await verifyOnEtherscan(chain, contractAddress, contractSource, solcOutput.version);
-    }
-    if(!verifyResult.status === '1') throw new Error('UNABLE_TO_VERIFY_CONTRACT');
-    let contractStatus = {};
-    console.log(`# Waiting for verification on Etherscan...`);
-    while(['Already Verified', 'Pass - Verified'].indexOf(contractStatus.result) === -1) {
-      await delay(5000);
-      contractStatus = await checkEtherscanStatus(chain, verifyResult.result);
-      console.log(`> ${contractStatus.result}`);
-    }
+    await verifyOnEtherscan(chain, contractAddress, contractSource, solcOutput);
     await verifyCircuit(compiled.pkgName, chain.chain.id, contractAddress, options);
   } catch(error) {
     console.error(error);
