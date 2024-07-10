@@ -1,8 +1,8 @@
 import {relative, dirname} from 'node:path';
 import { isHex } from 'viem';
+import * as chains from 'viem/chains';
 
 import loadCircom from './src/loadCircom.js';
-import {findChain} from './src/chains.js';
 import {
   generateRandomString,
   fetchJson,
@@ -15,6 +15,7 @@ import {
   compileContract,
   deployContract,
   verifyOnEtherscan,
+  verifyOnSourcify,
 } from './src/deployer.js';
 
 const defaultCircomPath = 'circom-v2.1.8';
@@ -25,35 +26,43 @@ const ec2CompilerURL = 'https://yps4edoigeexpc2hzhvswru3b40mfbal.lambda-url.us-w
 const blobUrl = 'https://circuitscan-blob.s3.us-west-2.amazonaws.com/';
 
 export async function verify(file, chainId, contractAddr, options) {
-  const chain = findChain(chainId);
+  const chain = viemChain(chainId);
   if(!chain) throw new Error('INVALID_CHAIN');
   const {curCompilerURL} = await determineCompilerUrl(options);
   try {
     const compiled = await compileFile(file, options, { curCompilerURL });
-    await verifyCircuit(compiled.pkgName, chain.chain.id, contractAddr, options);
+    await verifyCircuit(compiled.pkgName, chain.id, contractAddr, options);
   } catch(error) {
     console.error(error);
   }
 }
 
 export async function deploy(file, chainId, options) {
-  const chain = findChain(chainId);
+  const chain = viemChain(chainId);
   if(!chain) throw new Error('INVALID_CHAIN');
   const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
   if(!privateKey || !isHex(privateKey) || privateKey.length !== 66)
     throw new Error('INVALID_DEPLOYER_PRIVATE_KEY')
-  if(!(chain.apiKeyEnvVar in process.env))
-    throw new Error('MISSING_' + chain.apiKeyEnvVar);
   const {curCompilerURL} = await determineCompilerUrl(options);
   try {
     const compiled = await compileFile(file, options, { curCompilerURL });
     const contractSource = await (await fetch(`${blobUrl}build/${compiled.pkgName}/verifier.sol`)).text();
     const solcOutput = compileContract(contractSource);
-    const contractAddress = await deployContract(solcOutput, chain.chain, privateKey);
+    const contractAddress = await deployContract(solcOutput, chain, privateKey);
     await verifyOnEtherscan(chain, contractAddress, contractSource, solcOutput);
-    await verifyCircuit(compiled.pkgName, chain.chain.id, contractAddress, options);
+    await verifyOnSourcify(chain, contractAddress, contractSource, solcOutput);
+    await verifyCircuit(compiled.pkgName, chain.id, contractAddress, options);
   } catch(error) {
     console.error(error);
+  }
+}
+
+function viemChain(nameOrId) {
+  if(isNaN(nameOrId)) {
+    return chains[nameOrId];
+  }
+  for(let chain of chains) {
+    if(chain.id === Number(nameOrId)) return chain;
   }
 }
 

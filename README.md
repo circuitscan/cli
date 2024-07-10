@@ -19,6 +19,8 @@ npm install -g circuitscan
 > [!TIP]
 > Close a running compiler job, then use `--resume` later complete verification or deployment. Alternatively, use `--resume` to duplicate a verifier, avoiding waiting for the circuit to compile again.
 
+Chaind ID can be specified as the number or the name from [viem/chains](https://github.com/wevm/viem/blob/main/src/chains/index.ts)
+
 ### verify
 
 ```
@@ -89,10 +91,12 @@ Options:
 > [!TIP]
 > If there's a timeout waiting for a contract deployment transaction, wait for the transaction to be included on chain then use the `verify` command passing the new contract address.
 >
-> The contract will have to be verified manually on Etherscan. Find the contract source at `https://circuitscan-blob.s3.us-west-2.amazonaws.com/build/<build-name-adjective-animal>/verifier.sol`
+> The contract will have to be verified manually on Etherscan or Sourcify. Find the contract source at `https://circuitscan-blob.s3.us-west-2.amazonaws.com/build/<build-name-adjective-animal>/verifier.sol`
 
 > [!IMPORTANT]
-> `DEPLOYER_PRIVATE_KEY` environment variable and a corresponding Etherscan API key is required
+> `DEPLOYER_PRIVATE_KEY` environment variable is required
+
+Contracts are always verified on Sourcify. If you would also like to verify on Etherscan, a corresponding Etherscan API key is required:
 
 | name         | apiKeyEnvVar              |
 |--------------|---------------------------|

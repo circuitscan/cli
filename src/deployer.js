@@ -2,8 +2,10 @@ import { createPublicClient, createWalletClient, http } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import solc from 'solc';
 import { Etherscan } from '@nomicfoundation/hardhat-verify/etherscan.js';
+import { Sourcify } from '@nomicfoundation/hardhat-verify/sourcify.js';
 
 import {delay} from './utils.js';
+import {findChain} from './chains.js';
 
 export async function deployContract(output, chain, privateKey) {
   const walletClient = createWalletClient({
@@ -29,10 +31,27 @@ export async function deployContract(output, chain, privateKey) {
   return tx.contractAddress;
 }
 
+export async function verifyOnSourcify(chain, contractAddress, contractSource, solcOutput) {
+  const sourcify = new Sourcify(chain.id, 'https://sourcify.dev/server');
+  return await sourcify.verify(contractAddress, {
+    'verifier.sol': contractSource,
+    'metadata.json': solcOutput.metadata,
+  });
+}
+
 export async function verifyOnEtherscan(chain, contractAddress, contractSource, solcOutput) {
   let verifyResult = null;
   let alreadyVerified = false;
-  const etherscan = new Etherscan(chain.apiKey, chain.apiUrl, '');
+  const etherscanChain = findChain(chain.id);
+  if(!etherscanChain) {
+    console.log('# Chain not supported by Etherscan');
+    return;
+  }
+  if(!etherscanChain.apiKey) {
+    console.log(`# ${etherscanChain.apiKeyEnvVar} missing, skipping Etherscan verification`);
+    return;
+  }
+  const etherscan = new Etherscan(etherscanChain.apiKey, etherscanChain.apiUrl, '');
   while(!verifyResult || verifyResult.isBytecodeMissingInNetworkError()) {
     await delay(5000);
     try {
@@ -68,6 +87,7 @@ export function compileContract(source) {
 
   return {
     abi: contract.abi,
+    metadata: contract.metadata,
     bytecode: contract.evm.bytecode.object,
     contractName,
     input,
