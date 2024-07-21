@@ -4,6 +4,8 @@ import {dirname, basename, join, resolve} from 'node:path';
 import {findClosestFile} from './utils.js';
 
 export default function(file) {
+  // Convert relative filename argument to full path
+  file = resolve(file);
   const circomkit = findClosestFile(dirname(file), 'circomkit.json');
   if(circomkit) {
     let extraLocations = [];

@@ -105,7 +105,6 @@ async function resumeCompileFile(options) {
 async function compileFile(file, options, {curCompilerURL}) {
   if(options.resume) return resumeCompileFile(options);
   const loaded = loadCircom(file);
-//   console.log(loaded);
   const shortFile = Object.keys(loaded.files)[0];
   if(!loaded.files[shortFile].mainComponent) throw new Error('MISSING_MAIN_COMPONENT');
 
