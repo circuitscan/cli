@@ -45,11 +45,11 @@ export async function verifyOnEtherscan(chain, contractAddress, contractSource, 
   const etherscanChain = findChain(chain.id);
   if(!etherscanChain) {
     console.log('# Chain not supported by Etherscan');
-    return;
+    return false;
   }
   if(!etherscanChain.apiKey) {
     console.log(`# ${etherscanChain.apiKeyEnvVar} missing, skipping Etherscan verification`);
-    return;
+    return false;
   }
   const etherscan = new Etherscan(etherscanChain.apiKey, etherscanChain.apiUrl, '');
   while(!verifyResult || verifyResult.isBytecodeMissingInNetworkError()) {
@@ -77,6 +77,7 @@ export async function verifyOnEtherscan(chain, contractAddress, contractSource, 
     console.log(`> ${contractStatus.message}`);
     if(contractStatus.isFailure()) throw new Error('CONTRACT_VERIFICATION_FAILURE');
   }
+  return true;
 }
 
 export function compileContract(source) {

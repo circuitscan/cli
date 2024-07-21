@@ -49,8 +49,22 @@ export async function deploy(file, chainId, options) {
     const contractSource = await (await fetch(`${blobUrl}build/${compiled.pkgName}/verifier.sol`)).text();
     const solcOutput = compileContract(contractSource);
     const contractAddress = await deployContract(solcOutput, chain, privateKey);
-    await verifyOnEtherscan(chain, contractAddress, contractSource, solcOutput);
-    await verifyOnSourcify(chain, contractAddress, contractSource, solcOutput);
+    let didVerifySolidity = false;
+    try {
+      // Will throw or return false if verification fails
+      const success = await verifyOnEtherscan(chain, contractAddress, contractSource, solcOutput);
+      didVerifySolidity |= success;
+    } catch(error) {
+      throw error;
+    }
+    try {
+      const response = await verifyOnSourcify(chain, contractAddress, contractSource, solcOutput);
+      didVerifySolidity |= response.isOk();
+    } catch(error) {
+      // Don't die if etherscan verifies but sourcify doesn't
+      if(!didVerifySolidity) throw error;
+      else console.log('# Sourcify verification failed but Etherscan verification succeeded, continuing...');
+    }
     await verifyCircuit(compiled.pkgName, chain.id, contractAddress, options);
   } catch(error) {
     console.error(error);
@@ -91,6 +105,7 @@ async function resumeCompileFile(options) {
 async function compileFile(file, options, {curCompilerURL}) {
   if(options.resume) return resumeCompileFile(options);
   const loaded = loadCircom(file);
+//   console.log(loaded);
   const shortFile = Object.keys(loaded.files)[0];
   if(!loaded.files[shortFile].mainComponent) throw new Error('MISSING_MAIN_COMPONENT');
 
