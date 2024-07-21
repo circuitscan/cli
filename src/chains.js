@@ -4,6 +4,7 @@ import {
   mainnet,
   optimism,
   polygon,
+  polygonZkEvmCardona,
   fantom,
   arbitrum,
   arbitrumNova,
@@ -62,6 +63,13 @@ export const chains = [
     apiUrl: 'https://api.polygonscan.com/api',
     apiKey: process.env.POLYGON_ETHERSCAN_API_KEY,
     apiKeyEnvVar: 'POLYGON_ETHERSCAN_API_KEY'
+  },
+  {
+    name: 'polygonZkEvmCardona',
+    chain: polygonZkEvmCardona,
+    apiUrl: 'https://api-cardona-zkevm.polygonscan.com/api',
+    apiKey: process.env.POLYGON_ZKEVM_ETHERSCAN_API_KEY,
+    apiKeyEnvVar: 'POLYGON_ZKEVM_ETHERSCAN_API_KEY'
   },
   {
     name: 'fantom',
