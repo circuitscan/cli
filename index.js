@@ -19,11 +19,12 @@ import {
 } from './src/deployer.js';
 
 const defaultCircomPath = 'circom-v2.1.8';
-const serverURL = 'https://rekwakezbjsulha5ypzpjk3c7u0rfcgp.lambda-url.us-west-2.on.aws/';
+// TODO fetch urls from a config file on the circuitscan.org domain, allow configuring instance domain
+const serverURL = 'https://dwc7s54sevpb7pmxwwbi6mfuiu0khiie.lambda-url.us-west-2.on.aws/';
 // Default running on AWS Lambda max 10GB ram
-const lambdaCompilerURL = 'https://uvopzbfbfz5i5m4i3tsgq7rjeu0glwdl.lambda-url.us-west-2.on.aws/';
-const ec2CompilerURL = 'https://yps4edoigeexpc2hzhvswru3b40mfbal.lambda-url.us-west-2.on.aws/';
-const blobUrl = 'https://circuitscan-blob.s3.us-west-2.amazonaws.com/';
+const lambdaCompilerURL = 'https://pm2hkbl62yfer2hvqoxvt55qrq0kgdxj.lambda-url.us-west-2.on.aws/';
+const ec2CompilerURL = 'https://6ovfmuvcgighigrguuf2dxqwkm0nrmsn.lambda-url.us-west-2.on.aws/';
+const blobUrl = 'https://circuitscan-artifacts.s3.us-west-2.amazonaws.com/';
 
 export async function verify(file, chainId, contractAddr, options) {
   const chain = viemChain(chainId);
