@@ -7,6 +7,7 @@ import {
   getPackageJson,
   formatBytes,
   MAX_POST_SIZE,
+  DEFAULT_CONFIG,
 } from './src/utils.js';
 
 const program = new Command();
@@ -24,6 +25,7 @@ program
     .option('-v, --circom-version <circomVersion>', 'Specify the Circom version (e.g. "v2.1.8")')
     .option('-i, --instance <memorySize>', `Specify the memory (GB) of compiler instance: ${Object.keys(instanceSizes).join(', ')} (default: 10GB lambda, faster init for small circuits)`)
     .option('-r, --resume <requestId>', 'In case of errors during compilation, reattach to a job and attempt a new deploy. Overrides all other options.')
+    .option('-c, --config <configUrl>', `Specify a different configuration file (default: ${DEFAULT_CONFIG})`)
     .action(verify);
 
 // TODO .option('-b, --browser-wallet', 'Send transaction in browser instead of by passing private key env var')
@@ -35,6 +37,7 @@ program
     .option('-v, --circom-version <circomVersion>', 'Specify the Circom version (e.g. "v2.1.8")')
     .option('-i, --instance <memorySize>', `Specify the memory (GB) of compiler instance: ${Object.keys(instanceSizes).join(', ')} (default: 10GB lambda, faster init for small circuits)`)
     .option('-r, --resume <requestId>', 'In case of errors during compilation, reattach to a job and attempt a new deploy. Overrides all other options.')
+    .option('-c, --config <configUrl>', `Specify a different configuration file (default: ${DEFAULT_CONFIG})`)
     .action(deploy);
 
 program.parse(process.argv);

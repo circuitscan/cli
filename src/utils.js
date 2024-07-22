@@ -1,7 +1,19 @@
 import {accessSync, readFileSync} from 'node:fs';
 import {dirname, join, resolve} from 'node:path';
 
+export const DEFAULT_CONFIG = 'https://circuitscan.org/cli.json';
 export const MAX_POST_SIZE = 6 * 1024 ** 2; // 6 MB
+
+export async function loadConfig(options) {
+  try {
+    const response = await fetch(options.config || process.env.CIRCUITSCAN_CONFIG || DEFAULT_CONFIG);
+    const data = await response.json();
+    options.config = data;
+  } catch(error) {
+    throw new Error('INVALID_CONFIG_URL');
+  }
+  return options;
+}
 
 export function prepareProvingKey(input) {
   // Not specified

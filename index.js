@@ -9,6 +9,7 @@ import {
   delay,
   instanceSizes,
   prepareProvingKey,
+  loadConfig,
 } from './src/utils.js';
 import {StatusLogger} from './src/StatusLogger.js';
 import {
@@ -18,15 +19,8 @@ import {
   verifyOnSourcify,
 } from './src/deployer.js';
 
-const defaultCircomPath = 'circom-v2.1.8';
-// TODO fetch urls from a config file on the circuitscan.org domain, allow configuring instance domain
-const serverURL = 'https://dwc7s54sevpb7pmxwwbi6mfuiu0khiie.lambda-url.us-west-2.on.aws/';
-// Default running on AWS Lambda max 10GB ram
-const lambdaCompilerURL = 'https://pm2hkbl62yfer2hvqoxvt55qrq0kgdxj.lambda-url.us-west-2.on.aws/';
-const ec2CompilerURL = 'https://6ovfmuvcgighigrguuf2dxqwkm0nrmsn.lambda-url.us-west-2.on.aws/';
-const blobUrl = 'https://circuitscan-artifacts.s3.us-west-2.amazonaws.com/';
-
 export async function verify(file, chainId, contractAddr, options) {
+  options = await loadConfig(options);
   const chain = viemChain(chainId);
   if(!chain) throw new Error('INVALID_CHAIN');
   const {curCompilerURL} = await determineCompilerUrl(options);
@@ -39,6 +33,7 @@ export async function verify(file, chainId, contractAddr, options) {
 }
 
 export async function deploy(file, chainId, options) {
+  options = await loadConfig(options);
   const chain = viemChain(chainId);
   if(!chain) throw new Error('INVALID_CHAIN');
   const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
@@ -47,7 +42,7 @@ export async function deploy(file, chainId, options) {
   const {curCompilerURL} = await determineCompilerUrl(options);
   try {
     const compiled = await compileFile(file, options, { curCompilerURL });
-    const contractSource = await (await fetch(`${blobUrl}build/${compiled.pkgName}/verifier.sol`)).text();
+    const contractSource = await (await fetch(`${options.config.blobUrl}build/${compiled.pkgName}/verifier.sol`)).text();
     const solcOutput = compileContract(contractSource);
     const contractAddress = await deployContract(solcOutput, chain, privateKey);
     let didVerifySolidity = false;
@@ -82,9 +77,9 @@ function viemChain(nameOrId) {
 }
 
 async function determineCompilerUrl(options) {
-  let curCompilerURL = lambdaCompilerURL;
+  let curCompilerURL = options.config.lambdaCompilerURL;
   if(options.instance) {
-    curCompilerURL = ec2CompilerURL;
+    curCompilerURL = options.config.ec2CompilerURL;
   }
   return {curCompilerURL};
 }
@@ -94,7 +89,7 @@ async function resumeCompileFile(options) {
   if('instance' in options && !(options.instance in instanceSizes))
     throw new Error('INVALID_INSTANCE_SIZE');
   // status report during compilation
-  const status = new StatusLogger(`${blobUrl}status/${requestId}.json`, 3000, Number(options.instance || 10));
+  const status = new StatusLogger(`${options.config.blobUrl}status/${requestId}.json`, 3000, Number(options.instance || 10));
 
   while(!status.lastData || !status.lastData.find(x => x.msg === 'Complete.')) {
     await delay(5000);
@@ -127,7 +122,7 @@ async function compileFile(file, options, {curCompilerURL}) {
     throw new Error('INVALID_INSTANCE_SIZE');
   const instanceType = options.instance ? instanceSizes[options.instance] : undefined;
   // status report during compilation
-  const status = new StatusLogger(`${blobUrl}status/${requestId}.json`, 3000, Number(options.instance || 10));
+  const status = new StatusLogger(`${options.config.blobUrl}status/${requestId}.json`, 3000, Number(options.instance || 10));
 
   const event = {
     payload: {
@@ -138,7 +133,7 @@ async function compileFile(file, options, {curCompilerURL}) {
       finalZkey: prepareProvingKey(options.provingKey),
       // TODO support custom snarkjs version
       snarkjsVersion: undefined,
-      circomPath: options.circomVersion ? 'circom-' + options.circomVersion : defaultCircomPath,
+      circomPath: options.circomVersion ? 'circom-' + options.circomVersion : options.config.defaultCircomPath,
       protocol: options.protocol || (loaded.circomkit && loaded.circomkit.protocol) || 'groth16',
       circuit: {
         file: shortFile.slice(0, -7), // remove .circom
@@ -174,7 +169,7 @@ async function compileFile(file, options, {curCompilerURL}) {
     while(!status.lastData || !status.lastData.find(x => x.msg === 'Complete.')) {
       await delay(5000);
     }
-    const response = await fetch(`${blobUrl}instance-response/${requestId}.json`);
+    const response = await fetch(`${options.config.blobUrl}instance-response/${requestId}.json`);
     const data = await response.json();
     body = JSON.parse(data.body);
   }
@@ -193,7 +188,7 @@ async function verifyCircuit(pkgName, chainId, contractAddr, options) {
   };
   console.log(`# Verifying circuit...`);
 
-  const response = await fetch(serverURL, {
+  const response = await fetch(options.config.serverURL, {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',
