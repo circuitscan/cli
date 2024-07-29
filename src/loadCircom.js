@@ -46,15 +46,14 @@ function loadCircomSources(fileName, rootDir, extraLocations, parentFile, out) {
       circomCode = readFileSync(tryFile, {encoding: 'utf8'});
     } catch(error) {
       if(error.code === 'ENOENT') {
-        tryIndex++;
-        if(tryIndex === 1) {
+        if(tryIndex < extraLocations.length) {
+          tryFile = resolve(join(rootDir, extraLocations[tryIndex], fileName));
+        } else if(tryIndex === extraLocations.length) {
           tryFile = join(rootDir, fileName);
-        } else if(tryIndex === 2) {
+        } else if(tryIndex === extraLocations.length + 1) {
           tryFile = join(rootDir, 'node_modules', fileName);
-        } else if(tryIndex === 3) {
+        } else if(tryIndex === extraLocations.length + 2) {
           tryFile = join(rootDir, 'node_modules', 'circomlib', 'circuits', fileName);
-        } else if(tryIndex < extraLocations.length + 4) {
-          tryFile = resolve(join(rootDir, extraLocations[tryIndex - 4], fileName));
         } else {
           throw new Error(`NOT_FOUND
 
@@ -70,6 +69,7 @@ Consider creating a circomkit.json file to specify more search locations.
 `}
 `);
         }
+        tryIndex++;
       } else throw error;
     }
   }

@@ -12,6 +12,7 @@ import {
   loadConfig,
 } from './src/utils.js';
 import {StatusLogger} from './src/StatusLogger.js';
+import watchInstance from './src/watchInstance.js';
 import {
   compileContract,
   deployContract,
@@ -29,7 +30,9 @@ export async function verify(file, chainId, contractAddr, options) {
     await verifyCircuit(compiled.pkgName, chain.id, contractAddr, options);
   } catch(error) {
     console.error(error);
+    process.exit(1);
   }
+  process.exit(0);
 }
 
 export async function deploy(file, chainId, options) {
@@ -64,7 +67,9 @@ export async function deploy(file, chainId, options) {
     await verifyCircuit(compiled.pkgName, chain.id, contractAddress, options);
   } catch(error) {
     console.error(error);
+    process.exit(1);
   }
+  process.exit(0);
 }
 
 function viemChain(nameOrId) {
@@ -123,6 +128,8 @@ async function compileFile(file, options, {curCompilerURL}) {
   const instanceType = options.instance ? instanceSizes[options.instance] : undefined;
   // status report during compilation
   const status = new StatusLogger(`${options.config.blobUrl}status/${requestId}.json`, 3000, Number(options.instance || 10));
+  const circomPath = options.circomVersion ? 'circom-' + options.circomVersion : options.config.defaultCircomPath;
+  const circomVersion = circomPath.slice(8);
 
   const event = {
     payload: {
@@ -133,10 +140,12 @@ async function compileFile(file, options, {curCompilerURL}) {
       finalZkey: prepareProvingKey(options.provingKey),
       // TODO support custom snarkjs version
       snarkjsVersion: undefined,
-      circomPath: options.circomVersion ? 'circom-' + options.circomVersion : options.config.defaultCircomPath,
+      circomPath,
       protocol: options.protocol || (loaded.circomkit && loaded.circomkit.protocol) || 'groth16',
+      prime: (loaded.circomkit && loaded.circomkit.prime) || 'bn128',
       circuit: {
         file: shortFile.slice(0, -7), // remove .circom
+        version: circomVersion,
         template: loaded.files[shortFile].mainComponent.templateName,
         params: loaded.files[shortFile].mainComponent.args,
         pubs: loaded.files[shortFile].mainComponent.publicSignals,
@@ -166,12 +175,17 @@ async function compileFile(file, options, {curCompilerURL}) {
 
   if(data.status === 'ok' && instanceType) {
     console.log('# Instance started. Wait a few minutes for initialization...');
-    while(!status.lastData || !status.lastData.find(x => x.msg === 'Complete.')) {
-      await delay(5000);
-    }
+    // Other statuses will arrive from the StatusLogger
+    const {stderr, stdout} = await watchInstance(options.config.blobUrl, requestId, 8000);
+    console.error(stderr);
+    console.log(stdout);
     const response = await fetch(`${options.config.blobUrl}instance-response/${requestId}.json`);
-    const data = await response.json();
-    body = JSON.parse(data.body);
+    try {
+      const data = await response.json();
+      body = JSON.parse(data.body);
+    } catch(error) {
+      throw new Error('Compilation was not successful.');
+    }
   }
   status.stop();
   return body;

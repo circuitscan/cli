@@ -82,6 +82,10 @@ export class StatusLogger {
           const isStatusBarUpdate = this.statusBars.find(x => item.msg === x.msg);
           if(!isStatusBarUpdate) {
             this.appendBuffer(`> ${item.msg} ${item.time !== this.startTime ? `@ ${(item.time - this.startTime).toFixed(4)}s` : ''}`);
+            // Circomkit logs come in the data property
+            if(item.data && item.data.msg) {
+              this.appendBuffer(item.data.msg);
+            }
           } else {
             isStatusBarUpdate.handler.call(this, item);
           }

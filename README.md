@@ -19,6 +19,9 @@ npm install -g circuitscan
 > [!TIP]
 > Close a running compiler job, then use `--resume` later complete verification or deployment. Alternatively, use `--resume` to duplicate a verifier, avoiding waiting for the circuit to compile again.
 
+> [!TIP]
+> Configuring the circuit field size prime value must be done using a `circomkit.json` file.
+
 Chaind ID can be specified as the number or the name from [viem/chains](https://github.com/wevm/viem/blob/main/src/chains/index.ts)
 
 ### verify
