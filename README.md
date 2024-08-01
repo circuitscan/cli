@@ -35,6 +35,7 @@ Options:
   -p, --protocol <protocol>             Specify the protocol: groth16 (default), fflonk, plonk (overrides circomkit.json if available)
   -k, --proving-key <provingKey>        Specify the proving key filename or url (optional, for Groth16 trusted setups). Must be https hosted if >6 MB
   -v, --circom-version <circomVersion>  Specify the Circom version (e.g. "v2.1.8")
+  -s, --snarkjs-version <snarkjsVersion>  Specify the SnarkJS version (e.g. "0.7.3")
   -i, --instance <memorySize>           Specify the memory (GB) of compiler instance: 4, 8, 16, 32, 64, 128, 256, 384, 512 (default: 10GB lambda, faster init for small circuits)
   -r, --resume <requestId>              In case of errors during compilation, reattach to a job and attempt a new verification. Overrides all other options.
   -c, --config <configUrl>              Specify a different configuration file (default: https://circuitscan.org/cli.json)
@@ -86,6 +87,7 @@ Options:
   -p, --protocol <protocol>             Specify the protocol: groth16 (default), fflonk, plonk (overrides circomkit.json if available)
   -k, --proving-key <provingKey>        Specify the proving key filename or url (optional, for Groth16 trusted setups). Must be https hosted if >6 MB
   -v, --circom-version <circomVersion>  Specify the Circom version (e.g. "v2.1.8")
+  -s, --snarkjs-version <snarkjsVersion>  Specify the SnarkJS version (e.g. "0.7.3")
   -i, --instance <memorySize>           Specify the memory (GB) of compiler instance: 4, 8, 16, 32, 64, 128, 256, 384, 512 (default: 10GB lambda, faster init for small circuits)
   -r, --resume <requestId>              In case of errors during compilation, reattach to a job and attempt a new deploy. Overrides all other options.
   -c, --config <configUrl>              Specify a different configuration file (default: https://circuitscan.org/cli.json)

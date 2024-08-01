@@ -138,8 +138,7 @@ async function compileFile(file, options, {curCompilerURL}) {
       action: 'build',
       files,
       finalZkey: prepareProvingKey(options.provingKey),
-      // TODO support custom snarkjs version
-      snarkjsVersion: undefined,
+      snarkjsVersion: options.snarkjsVersion,
       circomPath,
       protocol: options.protocol || (loaded.circomkit && loaded.circomkit.protocol) || 'groth16',
       prime: (loaded.circomkit && loaded.circomkit.prime) || 'bn128',
