@@ -140,6 +140,7 @@ async function compileFile(file, options, {curCompilerURL}) {
       finalZkey: prepareProvingKey(options.provingKey),
       snarkjsVersion: options.snarkjsVersion,
       circomPath,
+      optimization: (loaded.circomkit && loaded.circomkit.optimization),
       protocol: options.protocol || (loaded.circomkit && loaded.circomkit.protocol) || 'groth16',
       prime: (loaded.circomkit && loaded.circomkit.prime) || 'bn128',
       circuit: {
