@@ -84,6 +84,14 @@ export function compileContract(source) {
   const input = standardJson(source);
   const contractName = findContractName(source);
   const output = JSON.parse(solc.compile(JSON.stringify(input)));
+  if(output.errors) {
+    // Compiler errors
+    console.error('Solidity Verifier Compilation Error!');
+    for(let i = 0; i<output.errors.length; i++) {
+      console.error(output.errors[i].formattedMessage);
+    }
+    process.exit(1);
+  }
   const contract = output.contracts['contracts/Verified.sol'][contractName];
 
   return {
