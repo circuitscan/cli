@@ -22,6 +22,12 @@ npm install -g circuitscan
 > [!TIP]
 > Configuring the circuit field size prime value must be done using a `circomkit.json` file.
 
+API Key precedence:
+
+1. Command line argument `-a` or `--api-key`
+2. `CIRCUITSCAN_API_KEY` environment variable
+3. `~/.circuitscan` JSON user configuration `{ "apiKey": "xxx" }`
+
 Chaind ID can be specified as the number or the name from [viem/chains](https://github.com/wevm/viem/blob/main/src/chains/index.ts)
 
 ### verify
@@ -39,6 +45,7 @@ Options:
   -i, --instance <memorySize>           Specify the memory (GB) of compiler instance: 4, 8, 16, 32, 64, 128, 256, 384, 512 (default: 10GB lambda, faster init for small circuits)
   -r, --resume <requestId>              In case of errors during compilation, reattach to a job and attempt a new verification. Overrides all other options.
   -c, --config <configUrl>              Specify a different configuration file (default: https://circuitscan.org/cli.json)
+  -a, --api-key <apiKey>                  Specify your API Key as a command line argument
   -h, --help                            display help for command
 
 ```
@@ -91,6 +98,7 @@ Options:
   -i, --instance <memorySize>           Specify the memory (GB) of compiler instance: 4, 8, 16, 32, 64, 128, 256, 384, 512 (default: 10GB lambda, faster init for small circuits)
   -r, --resume <requestId>              In case of errors during compilation, reattach to a job and attempt a new deploy. Overrides all other options.
   -c, --config <configUrl>              Specify a different configuration file (default: https://circuitscan.org/cli.json)
+  -a, --api-key <apiKey>                  Specify your API Key as a command line argument
   -h, --help                            display help for command
 
 ```

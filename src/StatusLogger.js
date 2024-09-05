@@ -31,7 +31,9 @@ export class StatusLogger {
       {
         msg: 'Memory Usage Update',
         handler(data) {
-          const disk = data.data.disk.find(x => x.Mounted === '/tmp');
+          const disk = data.data.disk.find(x => x.Mounted === '/tmp')
+            // Docker mode won't have a specific /tmp mount
+            || data.data.disk.find(x => x.Mounted === '/');
           const memUsage = data.data.memory.rss * 100 / (maxMemGB * (1024 ** 3));
           const diskUsage = Number(disk['Used']) * 100 / Number(disk['1K-blocks']);
           this.setSuffix(`Memory Usage: ${memUsage.toFixed(2)}% (${formatBytes(data.data.memory.rss)}), Disk Usage: ${diskUsage.toFixed(2)}% (${formatBytes(Number(disk['Used']) * (1024 ** 1))})`)

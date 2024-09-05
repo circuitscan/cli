@@ -27,6 +27,7 @@ program
     .option('-i, --instance <memorySize>', `Specify the memory (GB) of compiler instance: ${Object.keys(instanceSizes).join(', ')} (default: 10GB lambda, faster init for small circuits)`)
     .option('-r, --resume <requestId>', 'In case of errors during compilation, reattach to a job and attempt a new deploy. Overrides all other options.')
     .option('-c, --config <configUrl>', `Specify a different configuration file (default: ${DEFAULT_CONFIG})`)
+    .option('-a, --api-key <apiKey>', `Specify your API Key as a command line argument`)
     .action(verify);
 
 // TODO .option('-b, --browser-wallet', 'Send transaction in browser instead of by passing private key env var')
@@ -40,6 +41,7 @@ program
     .option('-i, --instance <memorySize>', `Specify the memory (GB) of compiler instance: ${Object.keys(instanceSizes).join(', ')} (default: 10GB lambda, faster init for small circuits)`)
     .option('-r, --resume <requestId>', 'In case of errors during compilation, reattach to a job and attempt a new deploy. Overrides all other options.')
     .option('-c, --config <configUrl>', `Specify a different configuration file (default: ${DEFAULT_CONFIG})`)
+    .option('-a, --api-key <apiKey>', `Specify your API Key as a command line argument`)
     .action(deploy);
 
 program.parse(process.argv);

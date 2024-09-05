@@ -1,5 +1,6 @@
 import {accessSync, readFileSync} from 'node:fs';
 import {dirname, join, resolve} from 'node:path';
+import {homedir} from 'node:os';
 
 export const DEFAULT_CONFIG = 'https://circuitscan.org/cli.json';
 export const MAX_POST_SIZE = 6 * 1024 ** 2; // 6 MB
@@ -13,6 +14,22 @@ export async function loadConfig(options) {
     throw new Error('INVALID_CONFIG_URL');
   }
   return options;
+}
+
+function loadUserConfig() {
+  try {
+    return JSON.parse(readFileSync(join(homedir(), '.circuitscan'), 'utf8'));
+  } catch(error) {
+    console.error(error);
+    process.exit(1);
+  }
+}
+
+export function activeApiKey(options) {
+  if(options.apiKey) return options.apiKey;
+  if(process.env.CIRCUITSCAN_API_KEY) return process.env.CIRCUITSCAN_API_KEY;
+  const config = loadUserConfig() || {};
+  return config.apiKey;
 }
 
 export function prepareProvingKey(input) {

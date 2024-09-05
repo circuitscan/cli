@@ -1,4 +1,5 @@
 import {relative, dirname} from 'node:path';
+
 import { isHex } from 'viem';
 import * as chains from 'viem/chains';
 
@@ -10,6 +11,7 @@ import {
   instanceSizes,
   prepareProvingKey,
   loadConfig,
+  activeApiKey,
 } from './src/utils.js';
 import {StatusLogger} from './src/StatusLogger.js';
 import watchInstance from './src/watchInstance.js';
@@ -132,6 +134,7 @@ async function compileFile(file, options, {curCompilerURL}) {
   const circomVersion = circomPath.slice(8);
 
   const event = {
+    apiKey: activeApiKey(options),
     payload: {
       requestId,
       instanceType,
