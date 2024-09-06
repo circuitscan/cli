@@ -31,6 +31,68 @@ export async function deployContract(output, chain, privateKey) {
   return tx.contractAddress;
 }
 
+export async function browserDeploy(solcOutput, options) {
+  const event = {
+    payload: {
+      action: 'storeSolcOutput',
+      solcOutput,
+    },
+  };
+  console.log(`# Uploading contract bytecode...`);
+
+  const response = await fetch(options.config.serverURL, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(event),
+  });
+  if (!response.ok && response.status !== 400) {
+    throw new Error('Network response was not ok');
+  }
+  const data = await response.json();
+  const body = 'body' in data ? JSON.parse(data.body) : data;
+  if('errorType' in body) {
+    throw new Error(`Bytecode upload error: ${body.errorMessage}`);
+  }
+
+  if(body && body.status === 'ok') {
+    console.log(`# Open the following page to deploy the verifier contract with your browser wallet:`);
+    console.log(`\n${options.config.browserWalletURL}/${body.reference}`);
+    // Wait for browser to complete its tranasction and report result
+    const deployment = await new Promise((resolve, reject) => {
+      const interval = setInterval(async () => {
+        try {
+          const response = await fetch(`${options.config.blobUrl}browser-deployed/${body.reference}.json`);
+          if (!response.ok) {
+            if (response.status === 404 || response.status === 403) {
+              throw new NotFoundError;
+            } else {
+              console.log(response);
+              throw new Error('Error while checking deployment status');
+            }
+          }
+          const data = await response.json();
+          clearInterval(interval);
+          resolve(data);
+        } catch(error) {
+          if(!(error instanceof NotFoundError)) {
+            clearInterval(interval);
+            reject(error);
+          }
+        }
+      }, 5000);
+    });
+    console.log('# Contract deployment success');
+    return deployment;
+  } else {
+    console.log(`# Failed to upload bytecode.`);
+    process.exit(1);
+  }
+}
+
+class NotFoundError extends Error {}
+
 export async function verifyOnSourcify(chain, contractAddress, contractSource, solcOutput) {
   const sourcify = new Sourcify(chain.id, 'https://sourcify.dev/server');
   return await sourcify.verify(contractAddress, {

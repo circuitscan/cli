@@ -30,10 +30,10 @@ API Key precedence:
 
 Chaind ID can be specified as the number or the name from [viem/chains](https://github.com/wevm/viem/blob/main/src/chains/index.ts)
 
-### verify
+### verify:circom
 
 ```
-Usage: circuitscan verify [options] <mainCircomFile> <chainId> <verifierContractAddress>
+Usage: circuitscan verify:circom [options] <mainCircomFile> <chainId> <verifierContractAddress>
 
 Verify verifier contracts by their circom sources. Can also specify chain by name.
 
@@ -83,10 +83,10 @@ Found 15 file(s):
 # Completed successfully!
 ```
 
-### deploy
+### deploy:circom
 
 ```
-Usage: circuitscan deploy [options] <mainCircomFile> <chainId>
+Usage: circuitscan deploy:circom [options] <mainCircomFile> <chainId>
 
 Deploy verifier contract by their circom sources. Can also specify chain by name.
 
@@ -99,17 +99,18 @@ Options:
   -r, --resume <requestId>              In case of errors during compilation, reattach to a job and attempt a new deploy. Overrides all other options.
   -c, --config <configUrl>              Specify a different configuration file (default: https://circuitscan.org/cli.json)
   -a, --api-key <apiKey>                  Specify your API Key as a command line argument
+  -b, --browser-wallet                    Send transaction in browser instead of by passing private key env var (overrides passed chainId)
   -h, --help                            display help for command
 
 ```
 
 > [!TIP]
-> If there's a timeout waiting for a contract deployment transaction, wait for the transaction to be included on chain then use the `verify` command passing the new contract address.
+> If there's a timeout error while waiting for a contract deployment transaction, wait for the transaction to be included on chain then use the `verify:circom` command passing the new contract address.
 >
 > The contract will have to be verified manually on Etherscan or Sourcify. Find the contract source at `https://circuitscan-artifacts.s3.us-west-2.amazonaws.com/build/<build-name-adjective-animal>/verifier.sol`
 
 > [!IMPORTANT]
-> `DEPLOYER_PRIVATE_KEY` environment variable is required
+> `DEPLOYER_PRIVATE_KEY` environment variable is required unless using `-b` or `--browser-wallet`
 
 Contracts are always verified on Sourcify. If you would also like to verify on Etherscan, a corresponding Etherscan API key is required:
 

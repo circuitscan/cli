@@ -18,7 +18,7 @@ program
     .version(getPackageJson().version);
 
 program
-    .command('verify <mainCircomFile> <chainId> <verifierContractAddress>')
+    .command('verify:circom <mainCircomFile> <chainId> <verifierContractAddress>')
     .description('Verify verifier contracts by their circom sources. Can also specify chain by name.')
     .option('-p, --protocol <protocol>', 'Specify the protocol: groth16 (default), fflonk, plonk (overrides circomkit.json if available)')
     .option('-k, --proving-key <provingKey>', `Specify the proving key filename or url (optional, for Groth16 trusted setups). Must be https hosted if >${formatBytes(MAX_POST_SIZE)}`)
@@ -30,9 +30,8 @@ program
     .option('-a, --api-key <apiKey>', `Specify your API Key as a command line argument`)
     .action(verify);
 
-// TODO .option('-b, --browser-wallet', 'Send transaction in browser instead of by passing private key env var')
 program
-    .command('deploy <mainCircomFile> <chainId>')
+    .command('deploy:circom <mainCircomFile> <chainId>')
     .description('Deploy verifier contract by their circom sources. Can also specify chain by name.')
     .option('-p, --protocol <protocol>', 'Specify the protocol: groth16 (default), fflonk, plonk (overrides circomkit.json if available)')
     .option('-k, --proving-key <provingKey>', `Specify the proving key filename or url (optional, for Groth16 trusted setups). Must be https hosted if >${formatBytes(MAX_POST_SIZE)}`)
@@ -42,6 +41,7 @@ program
     .option('-r, --resume <requestId>', 'In case of errors during compilation, reattach to a job and attempt a new deploy. Overrides all other options.')
     .option('-c, --config <configUrl>', `Specify a different configuration file (default: ${DEFAULT_CONFIG})`)
     .option('-a, --api-key <apiKey>', `Specify your API Key as a command line argument`)
+    .option('-b, --browser-wallet', 'Send transaction in browser instead of by passing private key env var (overrides passed chainId)')
     .action(deploy);
 
 program.parse(process.argv);

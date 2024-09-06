@@ -18,6 +18,7 @@ import watchInstance from './src/watchInstance.js';
 import {
   compileContract,
   deployContract,
+  browserDeploy,
   verifyOnEtherscan,
   verifyOnSourcify,
 } from './src/deployer.js';
@@ -39,7 +40,7 @@ export async function verify(file, chainId, contractAddr, options) {
 
 export async function deploy(file, chainId, options) {
   options = await loadConfig(options);
-  const chain = viemChain(chainId);
+  let chain = viemChain(chainId);
   if(!chain) throw new Error('INVALID_CHAIN');
   const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
   if(!privateKey || !isHex(privateKey) || privateKey.length !== 66)
@@ -49,7 +50,14 @@ export async function deploy(file, chainId, options) {
     const compiled = await compileFile(file, options, { curCompilerURL });
     const contractSource = await (await fetch(`${options.config.blobUrl}build/${compiled.pkgName}/verifier.sol`)).text();
     const solcOutput = compileContract(contractSource);
-    const contractAddress = await deployContract(solcOutput, chain, privateKey);
+    let contractAddress;
+    if(options.browserWallet) {
+      const response = await browserDeploy(solcOutput, options);
+      contractAddress = response.address;
+      chain = { id: response.chainId };
+    } else {
+      contractAddress = await deployContract(solcOutput, chain, privateKey);
+    }
     let didVerifySolidity = false;
     try {
       // Will throw or return false if verification fails
