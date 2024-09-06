@@ -84,6 +84,11 @@ function viemChain(nameOrId) {
 }
 
 async function determineCompilerUrl(options) {
+  if(process.env.LOCAL_COMPILER) {
+    return {
+      curCompilerURL: 'http://localhost:9001/2015-03-31/functions/function/invocations',
+    };
+  }
   let curCompilerURL = options.config.lambdaCompilerURL;
   if(options.instance) {
     curCompilerURL = options.config.ec2CompilerURL;
