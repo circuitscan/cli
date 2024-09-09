@@ -158,6 +158,7 @@ async function compileFile(file, options, {curCompilerURL}) {
       circomPath,
       optimization: (loaded.circomkit && loaded.circomkit.optimization),
       protocol: options.protocol || (loaded.circomkit && loaded.circomkit.protocol) || 'groth16',
+      ptauSize: options.ptau || undefined,
       prime: (loaded.circomkit && loaded.circomkit.prime) || 'bn128',
       circuit: {
         file: shortFile.slice(0, -7), // remove .circom
@@ -186,7 +187,7 @@ async function compileFile(file, options, {curCompilerURL}) {
   const data = await response.json();
   let body = 'body' in data ? JSON.parse(data.body) : data;
   if('errorType' in body) {
-    throw new Error('Invalid compilation result');
+    throw new Error(body.errorMessage);
   }
 
   if(data.status === 'ok' && instanceType) {
