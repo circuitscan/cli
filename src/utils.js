@@ -6,6 +6,7 @@ export const DEFAULT_CONFIG = 'https://circuitscan.org/cli.json';
 export const MAX_POST_SIZE = 6 * 1024 ** 2; // 6 MB
 
 export async function loadConfig(options) {
+  options.instance = options.instance || '4';
   try {
     const response = await fetch(options.config || process.env.CIRCUITSCAN_CONFIG || DEFAULT_CONFIG);
     const data = await response.json();
