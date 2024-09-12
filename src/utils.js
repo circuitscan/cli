@@ -1,4 +1,4 @@
-import {accessSync, readFileSync} from 'node:fs';
+import {accessSync, readFileSync, appendFileSync} from 'node:fs';
 import {dirname, join, resolve} from 'node:path';
 import {homedir} from 'node:os';
 
@@ -15,6 +15,10 @@ export async function loadConfig(options) {
     throw new Error('INVALID_CONFIG_URL');
   }
   return options;
+}
+
+export function appendRequest(reqId) {
+  appendFileSync(join(homedir(), '.circuitscan-history'), `${reqId}\n`);
 }
 
 function loadUserConfig() {

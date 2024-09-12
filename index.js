@@ -12,6 +12,7 @@ import {
   prepareProvingKey,
   loadConfig,
   activeApiKey,
+  appendRequest,
 } from './src/utils.js';
 import {StatusLogger} from './src/StatusLogger.js';
 import watchInstance from './src/watchInstance.js';
@@ -115,7 +116,15 @@ async function resumeCompileFile(options) {
     await delay(5000);
   }
   status.stop();
-  return { pkgName: status.lastData[0].msg.slice(10, -3) };
+  let pkgName;
+  for(let i = 0; i < status.lastData.length; i++) {
+    if(status.lastData[i].msg.startsWith('Compiling ')) {
+      pkgName = status.lastData[i].msg.slice(10, -3);
+      break;
+    }
+  }
+  if(!pkgName) throw new Error('INVALID_RESUME_LOG');
+  return { pkgName };
 }
 
 async function compileFile(file, options, {curCompilerURL}) {
@@ -138,6 +147,7 @@ async function compileFile(file, options, {curCompilerURL}) {
 
   const requestId = generateRandomString(40);
   console.log(`# Request ID: ${requestId}`);
+  appendRequest(requestId);
   if('instance' in options && !(options.instance in instanceSizes))
     throw new Error('INVALID_INSTANCE_SIZE');
   const instanceType = options.instance ? instanceSizes[options.instance] : undefined;
