@@ -42,9 +42,9 @@ export async function verify(file, chainId, contractAddr, options) {
 export async function deploy(file, chainId, options) {
   options = await loadConfig(options);
   let chain = viemChain(chainId);
-  if(!chain) throw new Error('INVALID_CHAIN');
+  if(!options.browserWallet && !chain) throw new Error('INVALID_CHAIN');
   const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
-  if(!privateKey || !isHex(privateKey) || privateKey.length !== 66)
+  if(!options.browserWallet && (!privateKey || !isHex(privateKey) || privateKey.length !== 66))
     throw new Error('INVALID_DEPLOYER_PRIVATE_KEY')
   const {curCompilerURL} = await determineCompilerUrl(options);
   try {
