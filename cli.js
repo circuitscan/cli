@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import {Command} from 'commander';
 
-import {verify, deploy} from './index.js';
+import {verify, deploy, verifyMulti} from './index.js';
 import {
   instanceSizes,
   getPackageJson,
@@ -45,5 +45,11 @@ program
     .option('-a, --api-key <apiKey>', `Specify your API Key as a command line argument`)
     .option('-b, --browser-wallet', 'Send transaction in browser instead of by passing private key env var (overrides chainId argument)')
     .action(deploy);
+
+program
+    .command('verify:circom-multi <jsonFile>')
+    .description('Verify a Groth16 multi-verifier using a JSON specification. See docs website for details.')
+    .option('-c, --config <configUrl>', `Specify a different configuration file (default: ${DEFAULT_CONFIG})`)
+    .action(verifyMulti);
 
 program.parse(process.argv);
