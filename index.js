@@ -131,14 +131,12 @@ function viemChain(nameOrId) {
 async function determineCompilerUrl(options) {
   if(process.env.LOCAL_COMPILER) {
     return {
-      curCompilerURL: 'http://localhost:9001/2015-03-31/functions/function/invocations',
+      curCompilerURL: process.env.LOCAL_COMPILER,
     };
   }
-  let curCompilerURL = options.config.lambdaCompilerURL;
-  if(options.instance) {
-    curCompilerURL = options.config.ec2CompilerURL;
-  }
-  return {curCompilerURL};
+  return {
+    curCompilerURL: options.config.ec2CompilerURL,
+  };
 }
 
 async function resumeCompileFile(options) {
@@ -198,6 +196,7 @@ async function compileFile(file, options, {curCompilerURL}) {
       requestId,
       instanceType,
       action: 'build',
+      pipeline: 'circom',
       files,
       finalZkey: prepareProvingKey(options.provingKey),
       snarkjsVersion: options.snarkjsVersion,
