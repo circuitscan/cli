@@ -2,10 +2,12 @@
 
 Deploy and verify your circuits to Circuitscan with a simple command.
 
+See also: [Circuitscan CLI Documentation](https://circuitscan.readthedocs.io/en/latest/usage.html)
+
 > [!NOTE]
 > Very much still under construction!
 >
-> Supports circom 2.0.8-2.1.8, snarkjs 0.6.11-0.7.4
+> Supports circom 2.0.8-2.1.9, snarkjs 0.6.11-0.7.4
 
 
 ## Installation
