@@ -1,9 +1,13 @@
-import {accessSync, readFileSync, appendFileSync} from 'node:fs';
+import {accessSync, readFileSync} from 'node:fs';
 import {dirname, join, resolve} from 'node:path';
-import {homedir} from 'node:os';
+import {fileURLToPath} from 'node:url';
+
+import * as chains from 'viem/chains';
 
 export const DEFAULT_CONFIG = 'https://circuitscan.org/cli.json';
 export const MAX_POST_SIZE = 6 * 1024 ** 2; // 6 MB
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export async function loadConfig(options) {
   options.instance = options.instance || '4';
@@ -17,41 +21,8 @@ export async function loadConfig(options) {
   return options;
 }
 
-export function appendRequest(reqId) {
-  appendFileSync(join(homedir(), '.circuitscan-history'), `${reqId}\n`);
-}
-
-function loadUserConfig() {
-  try {
-    return JSON.parse(readFileSync(join(homedir(), '.circuitscan'), 'utf8'));
-  } catch(error) {
-    console.error(error);
-    process.exit(1);
-  }
-}
-
-export function activeApiKey(options) {
-  if(options.apiKey) return options.apiKey;
-  if(process.env.CIRCUITSCAN_API_KEY) return process.env.CIRCUITSCAN_API_KEY;
-  const config = loadUserConfig() || {};
-  return config.apiKey;
-}
-
-export function prepareProvingKey(input) {
-  // Not specified
-  if(!input) return undefined;
-  // Externally hosted
-  if(typeof input === 'string' && input.startsWith('https')) return input;
-  const output = readFileSync(input).toString('base64');
-  if(output.length > MAX_POST_SIZE)
-    throw new Error(`Proving key too large for inline upload. (Max ${formatBytes(MAX_POST_SIZE)}) Host on https server instead.`);
-
-  // Send inline
-  return output;
-}
-
 export function getPackageJson() {
-  return JSON.parse(readFileSync('./package.json', 'utf8'));
+  return JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8'));
 }
 
 export function findClosestFile(dir, filename) {
@@ -139,4 +110,13 @@ export function formatBytes(bytes, decimals = 2) {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+export function viemChain(nameOrId) {
+  if(isNaN(nameOrId)) {
+    return chains[nameOrId];
+  }
+  for(let chain of chains) {
+    if(chain.id === Number(nameOrId)) return chain;
+  }
 }

@@ -5,7 +5,36 @@ import { Etherscan } from '@nomicfoundation/hardhat-verify/etherscan.js';
 import { Sourcify } from '@nomicfoundation/hardhat-verify/sourcify.js';
 
 import {delay} from './utils.js';
-import {findChain} from './chains.js';
+import {findChain} from './etherscanChains.js';
+
+export async function deployAndVerifyContractFromSource(contractSource, chain, privateKey, options) {
+  const solcOutput = compileContract(contractSource);
+  let contractAddress;
+  if(options.browserWallet) {
+    const response = await browserDeploy(solcOutput, options);
+    contractAddress = response.address;
+    chain = { id: response.chainId };
+  } else {
+    contractAddress = await deployContract(solcOutput, chain, privateKey);
+  }
+  let didVerifySolidity = false;
+  try {
+    // Will throw or return false if verification fails
+    const success = await verifyOnEtherscan(chain, contractAddress, contractSource, solcOutput);
+    didVerifySolidity |= success;
+  } catch(error) {
+    throw error;
+  }
+  try {
+    const response = await verifyOnSourcify(chain, contractAddress, contractSource, solcOutput);
+    didVerifySolidity |= response.isOk();
+  } catch(error) {
+    // Don't die if etherscan verifies but sourcify doesn't
+    if(!didVerifySolidity) throw error;
+    else console.log('# Sourcify verification failed but Etherscan verification succeeded, continuing...');
+  }
+  return {contractAddress, chain};
+}
 
 export async function deployContract(output, chain, privateKey) {
   const walletClient = createWalletClient({
@@ -147,12 +176,15 @@ export function compileContract(source) {
   const contractName = findContractName(source);
   const output = JSON.parse(solc.compile(JSON.stringify(input)));
   if(output.errors) {
-    // Compiler errors
-    console.error('Solidity Verifier Compilation Error!');
-    for(let i = 0; i<output.errors.length; i++) {
-      console.error(output.errors[i].formattedMessage);
+    const errors = output.errors.filter(x => x.severity !== 'warning');
+    if(errors.length) {
+      // Compiler errors
+      console.error('Solidity Verifier Compilation Error!');
+      for(let i = 0; i<errors.length; i++) {
+        console.error(errors[i].formattedMessage);
+      }
+      process.exit(1);
     }
-    process.exit(1);
   }
   const contract = output.contracts['contracts/Verified.sol'][contractName];
 

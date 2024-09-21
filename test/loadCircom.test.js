@@ -1,11 +1,15 @@
 import {deepStrictEqual, strictEqual, ok} from 'node:assert';
 
-import loadCircom from '../src/loadCircom.js';
+import loadCircom from '../src/circom/loadSources.js';
+
+const circomkitRootDir = 'test/circuits/circomkit/';
+const vanillaRootDir = 'test/circuits/vanilla/src/';
 
 describe('loadCircom', function() {
   it('should load circomkit.json includes from same dir', function() {
-    const file = 'test/circuits/circomkit/mainB.circom';
-    const loaded = loadCircom(file);
+    const file = 'mainB.circom';
+    const sources = loadCircom(circomkitRootDir + file);
+    const loaded = sources.files;
     const firstKey  = Object.keys(loaded)[0];
     strictEqual(firstKey, file);
     deepStrictEqual(loaded[file].mainComponent, {
@@ -19,8 +23,9 @@ describe('loadCircom', function() {
   });
 
   it('should load circomkit.json includes from parent dir', function() {
-    const file = 'test/circuits/circomkit/src/mainA.circom';
-    const loaded = loadCircom(file);
+    const file = 'src/mainA.circom';
+    const sources = loadCircom(circomkitRootDir + file);
+    const loaded = sources.files;
     const firstKey  = Object.keys(loaded)[0];
     strictEqual(firstKey, file);
     deepStrictEqual(loaded[file].mainComponent, {
@@ -35,10 +40,10 @@ describe('loadCircom', function() {
   });
 
   it('should fail when not found', function() {
-    const file = 'test/circuits/circomkit/src/mainC.circom';
+    const file = 'src/mainC.circom';
     let hadError;
     try {
-      const loaded = loadCircom(file);
+      const loaded = loadCircom(circomkitRootDir + file);
     } catch(error) {
       hadError = true;
       ok(error.message.startsWith('NOT_FOUND'));
@@ -47,8 +52,9 @@ describe('loadCircom', function() {
   });
 
   it('should load from circomlib without circomkit.json', function() {
-    const file = 'test/circuits/vanilla/src/mainC.circom';
-    const loaded = loadCircom(file);
+    const file = 'mainC.circom';
+    const sources = loadCircom(vanillaRootDir + file);
+    const loaded = sources.files;
     const firstKey  = Object.keys(loaded)[0];
     strictEqual(firstKey, file);
     deepStrictEqual(loaded[file].mainComponent, {

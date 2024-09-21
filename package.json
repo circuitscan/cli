@@ -1,7 +1,7 @@
 {
   "name": "circuitscan",
-  "version": "0.0.25-alpha",
-  "main": "index.js",
+  "version": "0.0.26-alpha",
+  "main": "cli.js",
   "type": "module",
   "author": "numtel <ben@latenightsketches.com>",
   "license": "MIT",
