@@ -1,6 +1,6 @@
 {
   "name": "circuitscan",
-  "version": "0.0.26-alpha",
+  "version": "0.0.27-alpha",
   "main": "cli.js",
   "type": "module",
   "author": "numtel <ben@latenightsketches.com>",

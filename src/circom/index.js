@@ -1,5 +1,5 @@
 import {readFileSync} from 'node:fs';
-import {dirname} from 'node:path';
+import {relative, dirname} from 'node:path';
 
 import {isHex} from 'viem';
 
