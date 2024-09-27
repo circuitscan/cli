@@ -55,7 +55,13 @@ async function verify(file, chainId, contractAddr, options) {
   if(!chain) throw new Error('INVALID_CHAIN');
   try {
     const compiled = await compileFile(file, options);
-    await verifyCircuit(compiled.pkgName, chain.id, contractAddr, options);
+    await verifyCircuit(
+      'verifyCircom',
+      compiled.pkgName,
+      chain.id,
+      contractAddr,
+      options,
+    );
   } catch(error) {
     console.error(error);
     process.exit(1);
@@ -75,6 +81,7 @@ async function deploy(file, chainId, options) {
     const contractSource = await (await fetch(`${options.config.blobUrl}build/${compiled.pkgName}/verifier.sol`)).text();
     const deployResult = await deployAndVerifyContractFromSource(contractSource, chain, privateKey, options);
     await verifyCircuit(
+      'verifyCircom',
       compiled.pkgName,
       deployResult.chain.id,
       deployResult.contractAddress,

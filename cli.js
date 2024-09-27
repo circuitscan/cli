@@ -7,6 +7,7 @@ import {
 
 import circomCommands from './src/circom/index.js';
 import circomMultiCommands from './src/circomMulti/index.js';
+import noirCommands from './src/noir/index.js';
 
 const program = new Command();
 
@@ -18,5 +19,6 @@ program
 // Each pipeline adds its commands
 circomCommands(program);
 circomMultiCommands(program);
+noirCommands(program);
 
 program.parse(process.argv);

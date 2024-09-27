@@ -198,10 +198,19 @@ export function compileContract(source) {
   };
 }
 
-function findContractName(soliditySource) {
-  const regex = /contract\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\{/;
-  const match = soliditySource.match(regex);
-  return match ? match[1] : null;
+function findContractName(soliditySource, returnAll) {
+  const regex = /contract\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:is\s+[a-zA-Z_][a-zA-Z0-9_,\s]*)?\s*\{/g;
+  const matches = [];
+
+  for (const match of soliditySource.matchAll(regex)) {
+    matches.push(match[1]);
+  }
+
+  // Return the last contract by default
+  // Because noir outputs 2 contracts in the verifier file
+  if(!returnAll && matches.length > 0) return matches[matches.length - 1];
+
+  return matches.length > 0 ? matches : null;
 }
 
 function standardJson(soliditySource) {

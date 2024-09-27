@@ -99,15 +99,8 @@ export async function invokeRemoteMachine(payload, options) {
   return body;
 }
 
-export async function verifyCircuit(pkgName, chainId, contractAddr, options) {
-  const event = {
-    payload: {
-      action: 'verifyCircom',
-      pkgName,
-      chainId,
-      contract: contractAddr,
-    },
-  };
+export async function verifyCircuit(action, pkgName, chainId, contract, options) {
+  const event = {payload: {action, pkgName, chainId, contract}};
   console.log(`# Verifying circuit...`);
 
   const response = await fetch(options.config.serverURL, {
@@ -128,7 +121,7 @@ export async function verifyCircuit(pkgName, chainId, contractAddr, options) {
 
   if(body && body.status === 'verified') {
     console.log(`# Completed successfully!`);
-    console.log(`\nhttps://circuitscan.org/chain/${chainId}/address/${contractAddr}`);
+    console.log(`\nhttps://circuitscan.org/chain/${chainId}/address/${contract}`);
   } else {
     console.log(`# Verification failed.`);
   }
