@@ -1,5 +1,5 @@
 import {join} from 'node:path';
-import {readFileSync, appendFileSync} from 'node:fs';
+import {readFileSync, appendFileSync, writeFileSync} from 'node:fs';
 import {homedir} from 'node:os';
 
 import {
@@ -132,12 +132,22 @@ function appendRequest(reqId) {
   appendFileSync(join(homedir(), '.circuitscan-history'), `${reqId}\n`);
 }
 
+export function loginCommand(program) {
+  program
+    .command('login <apiKey>')
+    .description('Save API Key in home directory for later use.')
+    .action((apiKey) => {
+      const config = loadUserConfig() || {};
+      config.apiKey = apiKey;
+      writeFileSync(join(homedir(), '.circuitscan'), JSON.stringify(config, null, 2));
+    });
+}
+
 function loadUserConfig() {
   try {
     return JSON.parse(readFileSync(join(homedir(), '.circuitscan'), 'utf8'));
   } catch(error) {
-    console.error(error);
-    process.exit(1);
+    // Do nothing
   }
 }
 
@@ -145,6 +155,10 @@ function activeApiKey(options) {
   if(options.apiKey) return options.apiKey;
   if(process.env.CIRCUITSCAN_API_KEY) return process.env.CIRCUITSCAN_API_KEY;
   const config = loadUserConfig() || {};
+  if(!config.apiKey) {
+    console.error('\n\nMissing API Key!\n\nGenerate one at https://circuitscan.org/manage-api-key\nThen use "circuitscan login <apiKey>"');
+    process.exit(1);
+  }
   return config.apiKey;
 }
 
