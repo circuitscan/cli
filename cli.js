@@ -3,7 +3,7 @@ import {Command} from 'commander';
 
 import {getPackageJson} from './src/utils.js';
 
-import {loginCommand} from './src/circuitscan.js';
+import {loginCommand, stopInstanceCommand} from './src/circuitscan.js';
 import circomCommands from './src/circom/index.js';
 import circomMultiCommands from './src/circomMulti/index.js';
 import noirCommands from './src/noir/index.js';
@@ -16,6 +16,7 @@ program
   .version(getPackageJson().version);
 
 loginCommand(program);
+stopInstanceCommand(program);
 // Each pipeline adds its commands
 circomCommands(program);
 circomMultiCommands(program);

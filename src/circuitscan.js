@@ -6,7 +6,6 @@ import {
   generateRandomString,
   delay,
   instanceSizes,
-  loadConfig,
 } from './utils.js';
 import {StatusLogger} from './StatusLogger.js';
 
@@ -54,8 +53,9 @@ export async function invokeRemoteMachine(payload, options) {
   // status report during compilation
   const status = new StatusLogger(`${options.config.blobUrl}status/${requestId}.json`, 3000, Number(options.instance || 10));
 
+  const apiKey = activeApiKey(options);
   const event = {
-    apiKey: activeApiKey(options),
+    apiKey,
     payload: {
       ...payload,
       requestId,
@@ -84,7 +84,7 @@ export async function invokeRemoteMachine(payload, options) {
   if(data.status === 'ok' && instanceType) {
     console.log('# Instance started. Wait a few minutes for initialization...');
     // Other statuses will arrive from the StatusLogger
-    const {stderr, stdout} = await watchInstance(options.config.blobUrl, requestId, 8000);
+    const {stderr, stdout} = await watchInstance(options.config.blobUrl, requestId, apiKey, options, 8000);
     console.error(stderr);
     console.log(stdout);
     const response = await fetch(`${options.config.blobUrl}instance-response/${requestId}.json`);
@@ -143,6 +143,17 @@ export function loginCommand(program) {
     });
 }
 
+export function stopInstanceCommand(program) {
+  program
+    .command('terminate <requestId>')
+    .description('Terminate a running compilation job')
+    .action(async (requestId) => {
+      const apiKey = loadUserConfig().apiKey;
+      const body = terminateInstance(requestId, apiKey);
+      console.log(body);
+    });
+}
+
 function loadUserConfig() {
   try {
     return JSON.parse(readFileSync(join(homedir(), '.circuitscan'), 'utf8'));
@@ -162,22 +173,80 @@ function activeApiKey(options) {
   return config.apiKey;
 }
 
-function watchInstance(blobUrl, requestId, timeout) {
+function watchInstance(blobUrl, requestId, apiKey, options, timeout) {
   return new Promise((resolve, reject) => {
+    let ip, healthcheckInterval;
     const interval = setInterval(async () => {
       try {
+        if(!ip) {
+          ip = (await fetchResult(blobUrl, requestId, 'ip')).trim();
+          console.log(`# Instance running at ${ip}...`);
+          healthcheckInterval = setInterval(async () => {
+            try {
+              await healthcheckFetch(ip, timeout - 1000);
+            } catch(error) {
+              if(error instanceof TimeoutError) {
+                // Instance is not responding
+                console.log(
+                  '\n\n# Instance health check failed, terminating!\n' +
+                  '# Possible out-of-memory exception. Try a larger instance size.\n\n'
+                );
+
+                try {
+                  const response = await terminateInstance(requestId, apiKey, options);
+                  if(response.status !== 'ok') {
+                    console.error(response);
+                  }
+                } catch(error) {
+                  // Not a big deal, just display it
+                  console.error(error);
+                }
+              }
+              clearInterval(interval);
+              clearInterval(healthcheckInterval);
+              reject(error);
+            }
+          }, timeout);
+        }
         const stderr = await fetchResult(blobUrl, requestId, 'stderr');
         const stdout = await fetchResult(blobUrl, requestId, 'stderr');
         clearInterval(interval);
+        clearInterval(healthcheckInterval);
         resolve({ stderr, stdout });
       } catch(error) {
         if(!(error instanceof NotFoundError)) {
           clearInterval(interval);
+          clearInterval(healthcheckInterval);
           reject(error);
         }
       }
     }, timeout);
   });
+}
+
+function healthcheckFetch(ip, timeout) {
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new TimeoutError()), timeout)
+  );
+  const fetchPromise = fetch(`http://${ip}:3000`);
+  return Promise.race([fetchPromise, timeoutPromise]);
+}
+
+async function terminateInstance(requestId, apiKey, options) {
+  const event = {payload: {requestId}, apiKey};
+  const response = await fetch(process.env.LOCAL_TERMINATOR || (options && options.config && options.config.terminatorURL), {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(event),
+  });
+  if (!response.ok && response.status !== 400) {
+    throw new Error('Network response was not ok');
+  }
+  const data = await response.json();
+  const body = 'body' in data ? JSON.parse(data.body) : data;
+  return body;
 }
 
 async function fetchResult(blobUrl, requestId, pipename) {
@@ -195,4 +264,5 @@ async function fetchResult(blobUrl, requestId, pipename) {
 }
 
 class NotFoundError extends Error {}
+class TimeoutError extends Error {}
 
