@@ -5,7 +5,7 @@ Deploy and verify your circuits to Circuitscan with a simple command.
 See also: [Circuitscan CLI Documentation](https://circuitscan.readthedocs.io/en/latest/usage.html)
 
 > [!NOTE]
-> Supports circom 2.0.8-2.1.9, snarkjs 0.6.11-0.7.4
+> Supports circom 2.0.8-2.1.9, snarkjs 0.6.11-0.7.5
 >
 > Supports noir 0.31.0-0.34.0
 

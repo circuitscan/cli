@@ -120,3 +120,23 @@ export function viemChain(nameOrId) {
     if(chain.id === Number(nameOrId)) return chain;
   }
 }
+
+export async function fetchWithRetry(url, options = {}, retries = 5, delay = 1000) {
+    for (let attempt = 0; attempt < retries; attempt++) {
+        try {
+            const response = await fetch(url, options);
+            return response;
+        } catch (error) {
+            if (error.message.includes('ETIMEDOUT') || error.message.includes('fetch failed')) {
+                if (attempt < retries - 1) {
+                    console.warn(`Retrying fetch (${attempt + 1}/${retries}) after timeout...`);
+                    await new Promise(res => setTimeout(res, delay * Math.pow(2, attempt))); // Exponential backoff
+                } else {
+                    throw new Error(`Fetch failed after ${retries} retries: ${error.message}`);
+                }
+            } else {
+                throw error; // If it's not a timeout error, rethrow it immediately
+            }
+        }
+    }
+}

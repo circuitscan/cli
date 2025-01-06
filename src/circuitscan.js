@@ -6,6 +6,7 @@ import {
   generateRandomString,
   delay,
   instanceSizes,
+  fetchWithRetry,
 } from './utils.js';
 import {StatusLogger} from './StatusLogger.js';
 
@@ -64,7 +65,7 @@ export async function invokeRemoteMachine(payload, options) {
   };
 
   const {curCompilerURL} = await determineCompilerUrl(options);
-  const response = await fetch(curCompilerURL, {
+  const response = await fetchWithRetry(curCompilerURL, {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',
@@ -87,7 +88,7 @@ export async function invokeRemoteMachine(payload, options) {
     const {stderr, stdout} = await watchInstance(options.config.blobUrl, requestId, apiKey, options, 8000);
     console.error(stderr);
     console.log(stdout);
-    const response = await fetch(`${options.config.blobUrl}instance-response/${requestId}.json`);
+    const response = await fetchWithRetry(`${options.config.blobUrl}instance-response/${requestId}.json`);
     try {
       const data = await response.json();
       body = JSON.parse(data.body);
@@ -103,7 +104,7 @@ export async function verifyCircuit(action, pkgName, chainId, contract, options)
   const event = {payload: {action, pkgName, chainId, contract}};
   console.log(`# Verifying circuit...`);
 
-  const response = await fetch(options.config.serverURL, {
+  const response = await fetchWithRetry(options.config.serverURL, {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',
@@ -228,13 +229,13 @@ function healthcheckFetch(ip, timeout) {
   const timeoutPromise = new Promise((_, reject) =>
     setTimeout(() => reject(new TimeoutError()), timeout)
   );
-  const fetchPromise = fetch(`http://${ip}:3000`);
+  const fetchPromise = fetchWithRetry(`http://${ip}:3000`);
   return Promise.race([fetchPromise, timeoutPromise]);
 }
 
 async function terminateInstance(requestId, apiKey, options) {
   const event = {payload: {requestId}, apiKey};
-  const response = await fetch(process.env.LOCAL_TERMINATOR || (options && options.config && options.config.terminatorURL), {
+  const response = await fetchWithRetry(process.env.LOCAL_TERMINATOR || (options && options.config && options.config.terminatorURL), {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',
@@ -250,7 +251,7 @@ async function terminateInstance(requestId, apiKey, options) {
 }
 
 async function fetchResult(blobUrl, requestId, pipename) {
-  const response = await fetch(`${blobUrl}instance/${requestId}/${pipename}.txt`);
+  const response = await fetchWithRetry(`${blobUrl}instance/${requestId}/${pipename}.txt`);
   if (!response.ok) {
     if (response.status === 404 || response.status === 403) {
       throw new NotFoundError;
