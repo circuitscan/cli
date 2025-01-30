@@ -2,6 +2,7 @@ import {readFileSync} from 'node:fs';
 
 import {
   loadConfig,
+  fetchWithRetry,
   DEFAULT_CONFIG,
 } from '../utils.js';
 
@@ -24,7 +25,7 @@ async function verifyMulti(file, options) {
   };
   console.log(`# Verifying groth16 multi-verifier...`);
 
-  const response = await fetch(options.config.serverURL, {
+  const response = await fetchWithRetry(options.config.serverURL, {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',

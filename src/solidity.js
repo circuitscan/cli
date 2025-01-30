@@ -4,7 +4,7 @@ import solc from 'solc';
 import { Etherscan } from '@nomicfoundation/hardhat-verify/etherscan.js';
 import { Sourcify } from '@nomicfoundation/hardhat-verify/sourcify.js';
 
-import {delay} from './utils.js';
+import {delay, fetchWithRetry} from './utils.js';
 import {findChain} from './etherscanChains.js';
 
 export async function deployAndVerifyContractFromSource(contractSource, chain, privateKey, options) {
@@ -69,7 +69,7 @@ export async function browserDeploy(solcOutput, options) {
   };
   console.log(`# Uploading contract bytecode...`);
 
-  const response = await fetch(options.config.serverURL, {
+  const response = await fetchWithRetry(options.config.serverURL, {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',
@@ -92,7 +92,7 @@ export async function browserDeploy(solcOutput, options) {
     const deployment = await new Promise((resolve, reject) => {
       const interval = setInterval(async () => {
         try {
-          const response = await fetch(`${options.config.blobUrl}browser-deployed/${body.reference}.json`);
+          const response = await fetchWithRetry(`${options.config.blobUrl}browser-deployed/${body.reference}.json`);
           if (!response.ok) {
             if (response.status === 404 || response.status === 403) {
               throw new NotFoundError;

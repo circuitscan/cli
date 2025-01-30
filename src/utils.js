@@ -12,7 +12,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 export async function loadConfig(options) {
   options.instance = options.instance || '4';
   try {
-    const response = await fetch(options.config || process.env.CIRCUITSCAN_CONFIG || DEFAULT_CONFIG);
+    const response = await fetchWithRetry(options.config || process.env.CIRCUITSCAN_CONFIG || DEFAULT_CONFIG);
     const data = await response.json();
     options.config = data;
   } catch(error) {
@@ -71,7 +71,7 @@ export function generateRandomString(length) {
 }
 
 export async function fetchJson(url, body) {
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

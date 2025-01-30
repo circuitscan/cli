@@ -235,7 +235,7 @@ function healthcheckFetch(ip, timeout) {
 
 async function terminateInstance(requestId, apiKey, options) {
   const event = {payload: {requestId}, apiKey};
-  const response = await fetchWithRetry(process.env.LOCAL_TERMINATOR || (options && options.config && options.config.terminatorURL), {
+  const response = await fetch(process.env.LOCAL_TERMINATOR || (options && options.config && options.config.terminatorURL), {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',

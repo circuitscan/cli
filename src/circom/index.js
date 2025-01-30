@@ -5,6 +5,7 @@ import {isHex} from 'viem';
 
 import {
   formatBytes,
+  fetchWithRetry,
   instanceSizes,
   loadConfig,
   viemChain,
@@ -78,7 +79,7 @@ async function deploy(file, chainId, options) {
     throw new Error('INVALID_DEPLOYER_PRIVATE_KEY')
   try {
     const compiled = await compileFile(file, options);
-    const contractSource = await (await fetch(`${options.config.blobUrl}build/${compiled.pkgName}/verifier.sol`)).text();
+    const contractSource = await (await fetchWithRetry(`${options.config.blobUrl}build/${compiled.pkgName}/verifier.sol`)).text();
     const deployResult = await deployAndVerifyContractFromSource(contractSource, chain, privateKey, options);
     await verifyCircuit(
       'verifyCircom',

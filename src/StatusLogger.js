@@ -1,6 +1,6 @@
 import {cursorUp, cursorLeft} from 'ansi-escapes';
 
-import {formatBytes} from './utils.js';
+import {formatBytes, fetchWithRetry} from './utils.js';
 
 export class NotFoundError extends Error {}
 
@@ -57,7 +57,7 @@ export class StatusLogger {
   }
 
   async fetchData() {
-    const response = await fetch(this.url);
+    const response = await fetchWithRetry(this.url);
     if (!response.ok) {
       if (response.status === 404 || response.status === 403) {
         throw new NotFoundError;

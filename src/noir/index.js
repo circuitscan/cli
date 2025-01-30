@@ -4,6 +4,7 @@ import {join, extname, resolve} from 'node:path';
 import {isHex} from 'viem';
 
 import {
+  fetchWithRetry,
   instanceSizes,
   loadConfig,
   viemChain,
@@ -69,7 +70,7 @@ async function deploy(chainId, packageDir, options) {
   if(!options.browserWallet && (!privateKey || !isHex(privateKey) || privateKey.length !== 66))
     throw new Error('INVALID_DEPLOYER_PRIVATE_KEY')
   const compiled = await compileFile(packageDir, options);
-  const contractSource = await (await fetch(`${options.config.blobUrl}build/${compiled.pkgName}/verifier.sol`)).text();
+  const contractSource = await (await fetchWithRetry(`${options.config.blobUrl}build/${compiled.pkgName}/verifier.sol`)).text();
   const deployResult = await deployAndVerifyContractFromSource(contractSource, chain, privateKey, options);
   await verifyCircuit(
     'verifyNoir',
