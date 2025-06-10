@@ -122,6 +122,7 @@ async function compileFile(file, options) {
     snarkjsVersion: options.snarkjsVersion,
     circomPath,
     optimization: (loaded.circomkit && loaded.circomkit.optimization),
+    cWitness: (loaded.circomkit && loaded.circomkit.cWitness),
     protocol: options.protocol || (loaded.circomkit && loaded.circomkit.protocol) || 'groth16',
     ptauSize: options.ptau || undefined,
     prime: (loaded.circomkit && loaded.circomkit.prime) || 'bn128',
