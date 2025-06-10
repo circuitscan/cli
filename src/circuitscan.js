@@ -112,6 +112,7 @@ export async function verifyCircuit(action, pkgName, chainId, contract, options)
     body: JSON.stringify(event),
   });
   if (!response.ok && response.status !== 400) {
+    console.error(response);
     throw new Error('Network response was not ok');
   }
   const data = await response.json();

@@ -116,7 +116,7 @@ export function viemChain(nameOrId) {
   if(isNaN(nameOrId)) {
     return chains[nameOrId];
   }
-  for(let chain of chains) {
+  for(let chain in chains) {
     if(chain.id === Number(nameOrId)) return chain;
   }
 }

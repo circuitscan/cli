@@ -19,6 +19,7 @@ import {
 
 const DEFAULT_NARGO = "0.33.0";
 const VERSIONS = {
+  "1.0.0-beta.3": "0.84.0",
   "0.34.0": "0.55.0",
   "0.33.0": "0.47.1",
   "0.32.0": "0.46.1",
@@ -93,7 +94,7 @@ async function compileFile(packageDir, options) {
   const nargoToml = readFileSync(join(packageDir, 'Nargo.toml'), 'utf8');
   const nargoVersion = options.nargoVersion || DEFAULT_NARGO;
   if(!VERSIONS.hasOwnProperty(nargoVersion))
-    throw new error('INVALID_NARGO_VERSION');
+    throw new Error('INVALID_NARGO_VERSION');
   const payload = {
     pipeline: 'noir',
     files,
