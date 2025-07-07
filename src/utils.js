@@ -97,6 +97,8 @@ export const instanceSizes = {
   256: 'r7i.8xlarge',
   384: 'r7i.12xlarge',
   512: 'r7i.16xlarge',
+  768: 'r7i.24xlarge',
+  1536: 'r7i.48xlarge',
 }
 
 export function formatBytes(bytes, decimals = 2) {
