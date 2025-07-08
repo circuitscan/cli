@@ -1,8 +1,11 @@
 import {accessSync, readFileSync} from 'node:fs';
 import {dirname, join, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import { fetch, Agent } from 'undici';
 
 import * as chains from 'viem/chains';
+
+const agent = new Agent({ connectTimeout: 10000 });
 
 export const DEFAULT_CONFIG = 'https://circuitscan.org/cli.json';
 export const MAX_POST_SIZE = 6 * 1024 ** 2; // 6 MB
@@ -124,21 +127,26 @@ export function viemChain(nameOrId) {
 }
 
 export async function fetchWithRetry(url, options = {}, retries = 5, delay = 1000) {
-    for (let attempt = 0; attempt < retries; attempt++) {
-        try {
-            const response = await fetch(url, options);
-            return response;
-        } catch (error) {
-            if (error.message.includes('ETIMEDOUT') || error.message.includes('fetch failed')) {
-                if (attempt < retries - 1) {
-                    console.warn(`Retrying fetch (${attempt + 1}/${retries}) after timeout...`);
-                    await new Promise(res => setTimeout(res, delay * Math.pow(2, attempt))); // Exponential backoff
-                } else {
-                    throw new Error(`Fetch failed after ${retries} retries: ${error.message}`);
-                }
-            } else {
-                throw error; // If it's not a timeout error, rethrow it immediately
-            }
-        }
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const response = await fetch(url, { ...options, dispatcher: agent });
+      return response;
+    } catch (error) {
+      const errorCode = error?.cause?.code;
+      console.error(`Fetch attempt ${attempt + 1} failed:`, errorCode, error.message);
+
+      const shouldRetry = errorCode === 'ETIMEDOUT' ||
+                          errorCode === 'ENOTFOUND' ||
+                          error.message.includes('fetch failed');
+
+      if (!shouldRetry) throw error;
+
+      if (attempt < retries - 1) {
+        console.warn(`Retrying fetch (${attempt + 1}/${retries}) after error: ${errorCode}`);
+        await new Promise(res => setTimeout(res, delay * Math.pow(2, attempt))); // Exponential backoff
+      } else {
+        throw new Error(`Fetch failed after ${retries} retries: ${error.message}`);
+      }
     }
+  }
 }
