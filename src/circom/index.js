@@ -123,7 +123,7 @@ async function compileFile(file, options) {
     circomPath,
     optimization: (loaded.circomkit && loaded.circomkit.optimization),
     cWitness: (loaded.circomkit && loaded.circomkit.cWitness),
-    skipWasm: (loaded.circomkit && loaded.circomkit.skipWasm),
+    wasmWitness: (loaded.circomkit && loaded.circomkit.wasmWitness) === false ? false : true,
     protocol: options.protocol || (loaded.circomkit && loaded.circomkit.protocol) || 'groth16',
     ptauSize: options.ptau || undefined,
     prime: (loaded.circomkit && loaded.circomkit.prime) || 'bn128',
