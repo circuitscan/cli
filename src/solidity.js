@@ -199,7 +199,7 @@ export function compileContract(source) {
 }
 
 function findContractName(soliditySource, returnAll) {
-  const regex = /contract\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:is\s+[a-zA-Z_][a-zA-Z0-9_,\s]*)?\s*\{/g;
+  const regex = /contract\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:is\s+[a-zA-Z_][a-zA-Z0-9_]*(?:\([^)]*\))?(?:\s*,\s*[a-zA-Z_][a-zA-Z0-9_]*(?:\([^)]*\))?)*)?\s*\{/g;
   const matches = [];
 
   for (const match of soliditySource.matchAll(regex)) {
